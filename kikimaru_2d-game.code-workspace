@@ -1,0 +1,92 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+	"settings": {
+		// ミニマップを非表示にする
+		"editor.minimap.enabled": false,
+		// カラーカスタマイズ
+		"workbench.colorCustomizations": {
+			"activityBar.background": "#e2df16b4",
+			"activityBar.foreground": "#06065df5",
+		},
+
+		// フォント設定
+		"editor.fontFamily": "Consolas, 'Cascadia Mono', 'SF Mono', Menlo, Monaco, 'Courier New', monospace",
+
+		// Copilot のコード提案は無効化しつつ、通常のサジェストは利用する
+		"github.copilot.enable": {
+			"*": false
+		},
+		"editor.suggestOnTriggerCharacters": true,
+		"editor.wordBasedSuggestions": "matchingDocuments",
+		"editor.inlineSuggest.enabled": false,
+		"editor.quickSuggestions": {
+			"other": true,
+			"comments": false,
+			"strings": false
+		},
+
+		// 編集時の見通しを良くする
+		"editor.rulers": [120],
+		"editor.tabSize": 4,
+		"editor.matchBrackets": "always",
+		"editor.bracketPairColorization.enabled": true,
+		"editor.guides.bracketPairs": true,
+		"editor.guides.highlightActiveBracketPair": true,
+		"editor.guides.indentation": true,
+		"editor.guides.highlightActiveIndentation": true,
+		"editor.stickyScroll.enabled": true,
+		"editor.showFoldingControls": "always",
+		"editor.wordSeparators": "./\\()\"'-:,.;<>~!@# ○$%^&*|+=[]{}`~?．。，、（）「」［］｛｝《》『』【】てにをはがのともへでや",
+
+		// skill settings
+		"[skill]": {
+			"files.encoding": "utf8",
+			"editor.insertSpaces": true,
+			"editor.tabSize": 2,
+			"editor.autoIndent": "advanced",
+			"editor.unicodeHighlight.ambiguousCharacters": true,
+			"editor.unicodeHighlight.invisibleCharacters": true,
+			"diffEditor.ignoreTrimWhitespace": false,
+			"editor.wordWrap": "on",
+			"editor.quickSuggestions": {
+				"comments": "off",
+				"strings": "on",
+				"other": "on"
+			},
+			"editor.wordBasedSuggestions": "off"
+		},
+		// context: forkを利用できるようにしておく
+		"github.copilot.chat.skillTool.enabled": true,
+		// 手動で圧縮するため自動圧縮を無効にしておく
+		"github.copilot.chat.summarizeAgentConversationHistory.enabled":false,
+
+
+		// git settings
+		"files.exclude": {
+			// "**/.git": false,  // デフォルトでtrue
+			"**/git-setup": true,
+		},
+		// VSCode標準のGit blame(行末に表示される最終コミット情報)を無効化
+		"git.blame.editorDecoration.enabled": false,
+		// GitLensのCurrent Line Blame(カーソル行に表示される履歴情報)を無効化
+		"gitlens.currentLine.enabled": false,
+		// コミットメッセージのinstructions
+		"github.copilot.chat.commitMessageGeneration.instructions": [
+			{
+				"file": "git-setup/COMMIT_TEMPLATE"
+			},
+			{
+				"text": "必ず日本語で。丁寧語は不要。体言止めで。何を変更したかを先に書き、続けて変更目的が分かるようにする。同じ説明を繰り返さない。"
+			}
+		],
+		
+		"chat.tools.terminal.autoApprove": {
+			// ReadOnly系コマンドは許可する
+			"/^Get-ChildItem\\b/i": true,
+		},
+	}
+}
