@@ -1,27 +1,39 @@
 # ききまるのおさんぽ
 
-既存の分割PNGを組み立てた、左右移動のブラウザデモです。
+既存のパーツ素材を使った、Phaser＋TypeScript＋Viteの2Dブラウザゲームです。
 
-## 起動
+## 目的別の入口
 
-`index.html` をダブルクリックして、EdgeやChromeで開いてください。
-Python、Node.js、追加ライブラリ、ローカルサーバーのインストールは不要です。ネット接続も不要です。
-ファイルを移動するときは、このフォルダ全体をまとめて移動してください。
+| 知りたいこと | 正本 |
+|---|---|
+| 現在の到達点・確認状況・未実装の構想 | [STATUS](docs/STATUS.md) |
+| 開発環境を準備する | [SETUP](docs/SETUP.md) |
+| デモを起動して遊ぶ | [RUN](docs/RUN.md) |
+| 変更後に検証する | [CHECKS](docs/CHECKS.md) |
+| 素材の仕様・組み込み上の制約 | [素材README](src/kikimaru-assets/README.md) |
+| Agentの作業ルール | [共通指示](.github/copilot-instructions.md)（Codexの入口は [AGENTS.md](AGENTS.md)） |
 
-## 操作
+## 数値・設定の正本（SSoT）
 
-- 左右の矢印キー、または A / D：押している間、左右移動。
-- 画面左下の矢印ボタン：長押しで移動。タッチ操作にも対応。
-- 「まんなかに戻る」：開始位置へ戻る。
-- 左右同時押し：停止。画面端では停止します。
+説明書には設定値を複製せず、次のファイルを参照します。変更時は正本を更新してください。
 
-ブラウザがアクティブな状態で操作してください。別タブや別ウィンドウへ移ったときは入力を解除します。
+| 情報 | 正本 |
+|---|---|
+| Node.jsのバージョン | [mise.toml](mise.toml) |
+| 直接依存・実行コマンド | [package.json](package.json) |
+| 解決済み依存関係・整合性情報 | [package-lock.json](package-lock.json) |
+| npmの導入方針 | [.npmrc](.npmrc) |
+| サーバー・ビルドの設定 | [vite.config.js](vite.config.js) |
+| 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
+| キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
+| 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
 
-## 構成
+## フォルダの役割
 
-- `index.html` / `style.css`：画面と操作ボタン。
-- `game.js`：入力、移動、待機・歩行アニメーション、Canvas描画。
-- `rig-data.js`：`kikimaru-assets/rig-layout.json` のコピーをJavaScript変数として保持。ファイルを直接開いて実行するため、fetchやES modulesを使いません。配置を変更するときは両方を更新してください。
-- `kikimaru-assets/`：元の素材。右向きのパーツ配置と描画順を維持し、全体反転で左向きを表現しています。
-
-このデモの範囲は左右移動です。ジャンプ、敵、クイズ、横スクロールはまだ実装していません。
+- `src/`：現行ゲーム。入口は `index.html` → `main.ts`。`scenes/` はPhaserのシーン。
+- `src/kikimaru-assets/`：現行コードが参照する素材と仕様。
+- `tests/`：入力・移動ロジックのテスト。
+- `docs/`：上記の目的別文書。
+- `.github/`：Agent共通指示・CIなどの運用設定。
+- `git-setup/`・`docker/`：既存のGit・セキュリティ検査用の補助環境。
+- `archive/`：旧デモ・過去資料。通常の開発対象・仕様の正本ではありません。履歴を調べる場合のみ [案内](archive/README.md) を参照。
