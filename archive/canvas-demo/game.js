@@ -76,7 +76,7 @@
       const image = new Image();
       image.onload = () => { images.set(key, image); resolve(); };
       image.onerror = () => reject(new Error(path));
-      image.src = `kikimaru-assets/${path}`;
+      image.src = `../../src/kikimaru-assets/${path}`;
     });
   }
 
@@ -181,7 +181,7 @@
     loading.hidden = true;
     requestAnimationFrame(frame);
   }).catch(error => {
-    loading.textContent = "画像を読み込めませんでした。index.htmlとkikimaru-assetsフォルダを同じ場所に置いてから、再読み込みしてください。";
+    loading.textContent = "画像を読み込めませんでした。リポジトリ内のarchiveとsrcの配置を確認してください。";
     status.textContent = "画像の読み込みエラー";
     console.error("Asset loading failed:", error);
   });
