@@ -5,25 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ききまるのおさんぽ</title>
   <link rel="stylesheet" href="style.css">
-  <script src="rig-data.js" defer></script>
-  <script src="game.js" defer></script>
+  <script type="module" src="/main.ts"></script>
 </head>
 <body>
   <main>
     <header>
-      <div><p class="eyebrow">BELLFLOWORKS · CHARACTER DEMO</p><h1>ききまるのおさんぽ<span>左右に動かしてみよう</span></h1></div>
+      <div><p class="eyebrow">BELLFLOWORKS · CHARACTER DEMO</p><h1>ききまるのおさんぽ<span>歩いて、ジャンプしてみよう</span></h1></div>
       <button id="reset" type="button">まんなかに戻る</button>
     </header>
     <section class="scene" aria-label="ききまるの操作デモ">
-      <canvas id="stage" width="1200" height="650" tabindex="0" aria-label="左右の矢印キー、またはAとDでききまるを動かせます。">このデモにはCanvas対応ブラウザが必要です。</canvas>
+      <div id="stage" tabindex="0" role="group" aria-label="左右の矢印キーまたはAとDで移動、スペースキーでジャンプ。"></div>
       <p id="loading" role="status">ききまるを準備しています…</p>
       <div class="scene-label"><span class="dot"></span><span id="state">おさんぽの準備中</span></div>
       <div class="touch-controls" aria-label="移動ボタン">
-        <button type="button" data-direction="-1" aria-label="左に進む">←</button>
-        <button type="button" data-direction="1" aria-label="右に進む">→</button>
+        <button type="button" data-action="left" aria-label="左に進む">←</button>
+        <button type="button" data-action="right" aria-label="右に進む">→</button>
       </div>
+      <div class="touch-controls jump-control"><button type="button" data-action="jump" aria-label="ジャンプ">ジャンプ<span>↑</span></button></div>
     </section>
-    <footer><p><kbd>←</kbd> <kbd>→</kbd> 押している間、移動 <span class="separator">/</span> <kbd>A</kbd> <kbd>D</kbd> でも操作できます</p><p>タッチ操作は画面の矢印を長押し</p></footer>
+    <footer><p><kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> 移動 <span class="separator">/</span> <kbd>Space</kbd> ジャンプ</p><p>タッチ操作：左下で移動 ＋ 右下でジャンプ</p></footer>
+    <noscript>遊ぶにはブラウザのJavaScriptを有効にしてください。</noscript>
   </main>
 </body>
 </html>

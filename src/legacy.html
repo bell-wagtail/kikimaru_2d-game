@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ききまるのおさんぽ</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="rig-data.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">BELLFLOWORKS · CHARACTER DEMO</p><h1>ききまるのおさんぽ<span>左右に動かしてみよう</span></h1></div>
+      <button id="reset" type="button">まんなかに戻る</button>
+    </header>
+    <section class="scene" aria-label="ききまるの操作デモ">
+      <canvas id="stage" width="1200" height="650" tabindex="0" aria-label="左右の矢印キー、またはAとDでききまるを動かせます。">このデモにはCanvas対応ブラウザが必要です。</canvas>
+      <p id="loading" role="status">ききまるを準備しています…</p>
+      <div class="scene-label"><span class="dot"></span><span id="state">おさんぽの準備中</span></div>
+      <div class="touch-controls" aria-label="移動ボタン">
+        <button type="button" data-direction="-1" aria-label="左に進む">←</button>
+        <button type="button" data-direction="1" aria-label="右に進む">→</button>
+      </div>
+    </section>
+    <footer><p><kbd>←</kbd> <kbd>→</kbd> 押している間、移動 <span class="separator">/</span> <kbd>A</kbd> <kbd>D</kbd> でも操作できます</p><p>タッチ操作は画面の矢印を長押し</p></footer>
+  </main>
+</body>
+</html>
