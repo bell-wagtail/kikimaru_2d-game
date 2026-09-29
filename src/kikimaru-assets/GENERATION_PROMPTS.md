@@ -36,3 +36,29 @@ Use case: illustration-story. Asset type: static wide 2D mobile platform game ba
 ## v2 直線腕
 
 組み込み画像生成機能で、正面パーツシートを参照し、クリーム色・紫褐色の輪郭を保った単一の直線カプセル形の腕を生成。肘の曲がり、くびれ、指は省き、上下に丸い端を持つアルファ透過PNGを指定。画像の範囲を切り出し、正面・右向きのarm.pngに共用。
+
+## 横方向の反復用背景（2026-09-29）
+
+生成・修正とも組み込み `image_gen` を使用。初稿は既存の `assets/backgrounds/tea_river.png` を画風・色合いの参照に指定。修正では初稿とその3枚連結画像を参照し、採用結果を `assets/backgrounds/tea_river_repeat_x.png` に保存。
+
+### 初稿
+
+```text
+Use case: illustration-story.
+Asset type: horizontally seamless repeating scenic backdrop tile for a 2D family-friendly game.
+Input image 1: STYLE, PALETTE AND WORLD REFERENCE, the project's existing tea_river background. Create a new companion background; retain its soft clean painterly anime illustration, gently layered foliage, bright pale blue sky, blue-green distant mountain ridges, fresh yellow-green tea fields, small Japanese countryside houses and winding light-blue river. Not a photograph, not pixel art.
+Output one opaque landscape PNG, 1536x1024 requested. Full bleed with no border, captions, panels or watermark.
+CRITICAL: tile must repeat HORIZONTALLY when exact identical copies are placed edge-to-edge, no mirroring, no overlap. Treat horizontal coordinates as periodic. Right edge must continue directly into left edge with matching sky colors, cloud contours, ridge heights AND slopes, distant trees, tea-field rows and foreground grass texture. Design the wraparound seam intentionally; no visible vertical line or brightness shift. Top and bottom do NOT need to tile.
+Composition similar to reference: open blue sky upper third; layered distant ridges and small tea-growing village across middle; gently winding river visible within middle scene and hidden behind hills before edges, not abruptly cut off; simple pale lime green open grass fills lower third, grass rear boundary is level. Keep perspective and scale consistent. At left/right boundary, mountain ridge at same height and smooth tangent, same middle-distance tea hills and connected shrub silhouettes, same level ground and light. Use an asymmetric, natural countryside composition rather than bilateral symmetry. Keep clouds entirely within tile if needed to avoid clipping; seamless sky gradient varying vertically only. No dark framing trees, no vignetting, no haze band at seam, no empty side margins.
+Preserve inviting daylight, restrained soft contrast and details for foreground readability. No characters, props, game platforms, UI, text or famous landmarks. This is a fictional central-Shizuoka-inspired scenic backdrop, not a geographic map. Produce the SINGLE reusable seamless tile only; not a repeated preview.
+```
+
+### 空の継ぎ目の修正（採用画像）
+
+```text
+Edit image 1, the single horizontally repeating tea-river background tile. Image 2 is a DIAGNOSTIC ONLY: three identical tiles side by side exposing subtle vertical brightness seams in the blue sky at each tile join. Return ONLY ONE single 1536x1024 tile like image 1, not the diagnostic triptych.
+TARGETED FIX: make the sky horizontally uniform in hue/lightness at corresponding heights, removing left-to-right illumination gradient and all vignetting. A gentle vertical sky gradient is fine, but color at x=0 must match color at x=1535 for each y. Keep clouds soft white and their existing design, ensure clouds meeting left/right boundary continue seamlessly.
+Preserve the original image's countryside composition, river, bridge, houses, tea rows, trees, mountain ridge shapes, ground level and grass, and exact style and palette. Also improve exact continuity of tiny mountain/shrub/grass contours at the wrap boundary if needed. Tile right edge must continue into left edge, with no mirrored repetition and no blank or faded strip. Opaque PNG, no labels or guides. The goal is one horizontally seamless repeating background matching image 1 but without the visible SKY seam shown in image 2.
+```
+
+確認画像は PowerShell / System.Drawing で採用PNGを無加工・等倍で3枚並べ、連結境界の左右各384pxを切り出して作成。反転・補間・フェードによる継ぎ目の隠蔽は行っていません。採用PNG自体への後処理はありません。
