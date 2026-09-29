@@ -27,6 +27,8 @@
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
+| ステージごとの背景・スクロール倍率・継ぎ目補正 | [stages.ts](src/stages.ts) |
+| 反復位置・長距離移動時の座標補正 | [scrolling.ts](src/scrolling.ts) |
 
 ## フォルダの役割
 

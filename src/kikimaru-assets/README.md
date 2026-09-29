@@ -19,7 +19,7 @@ Agentの入口はプロジェクトルートの [AGENTS.md](../../AGENTS.md) で
 | `assets/character/right/` | 右向き用の頭3表情、胴体、エプロン、腕、足、胸のマーク、着地の煙。9 PNG |
 | `assets/props/` | お茶、みかん、いちご、えび、魚、クイズ目印、ゴール旗、岩、ほこりの敵。9 PNG |
 | `assets/backgrounds/tea_river.png` | 茶畑・川・山里をイメージした背景。1 PNG |
-| `assets/backgrounds/tea_river_repeat_x.png` | 同じ世界観で新規制作した横方向の反復用背景。ゲーム未組み込み |
+| `assets/backgrounds/tea_river_repeat_x.png` | 同じ世界観で新規制作した横方向の反復用背景。現行ステージで使用 |
 | `assets/backgrounds/previews/tea_river_repeat_x_3x.png` | 反復用背景をそのまま3枚並べた確認画像 |
 | `assets/backgrounds/previews/tea_river_repeat_x_seam.png` | 連結境界の左右を等倍で切り出した確認画像 |
 | `source-atlases/` | 元シート3枚＋修正後の直線腕1枚 |
@@ -29,7 +29,7 @@ Agentの入口はプロジェクトルートの [AGENTS.md](../../AGENTS.md) で
 | `preview.png` | 組み立て確認用の静止画 |
 | `GENERATION_PROMPTS.md` | 画像生成に使ったプロンプト |
 
-ランタイム用は合計28画像。背景以外の27 PNGはアルファ透過あり。元のパーツシートは1254×1254ですが、生成画像は厳密な等間隔グリッドではありません。**元シートを機械的に3等分せず、個別PNGを使用**してください。個別PNGは実際のパーツ範囲を測り、6pxの余白を付けて切り出しました。縮小・再描画はしていません。
+素材一覧・実寸は `manifest.json` を正本とします。背景以外の27 PNGはアルファ透過あり。元のパーツシートは1254×1254ですが、生成画像は厳密な等間隔グリッドではありません。**元シートを機械的に3等分せず、個別PNGを使用**してください。個別PNGは実際のパーツ範囲を測り、6pxの余白を付けて切り出しました。縮小・再描画はしていません。
 
 ## アニメーション方式
 
@@ -70,7 +70,17 @@ Agentの入口はプロジェクトルートの [AGENTS.md](../../AGENTS.md) で
 
 追加の `tea_river_repeat_x.png` は、同一画像を反転・重ね合わせせず横に並べる用途で制作した、不透明な一枚絵です。上下方向の反復やレイヤー別の視差には対応していません。`previews/` は確認専用で、ゲームに読み込む背景ではありません。3枚連結画像の境界は x=1536 / 3072、等倍切り出し画像の境界は中央 x=384 にあります。
 
-今後の背景候補も `<風景名>_repeat_x.png` として区別できます。この追加画像は `manifest.json` に未登録で、上記の既存ランタイム用28画像には含みません。現在のゲームは引き続き既存背景を参照します。制作・確認の到達点は [STATUS](../../docs/STATUS.md) を参照してください。
+現行ゲームは `tea_river_repeat_x.png` を使用します。読み込み後に [RepeatingScenery.ts](../RepeatingScenery.ts) で右端の細い帯を左端へなめらかに重ねた描画用テクスチャを作り、境界の色差を抑えています。反復周期は元画像の幅から重ね幅を引いた長さです。元PNGと制作時の静止プレビューは変更しません。画像全体は縦横比を保って画面の高さに合わせ、遠景を地面よりゆっくり流します。
+
+### ステージの背景を差し替える
+
+1. `assets/backgrounds/` に不透明な横反復用PNG（例：`<風景名>_repeat_x.png`）を追加します。
+2. `manifest.json` に固有の `key`、`path`、実際の `width` / `height`、`repeatX: true`、`repeatY: false` を登録します。
+3. [stages.ts](../stages.ts) の `STAGES` にステージを追加し、`background.assetKey` にmanifestのキーを指定します。`scrollFactor` は地面に対する移動倍率（0なら固定）、`seamBlendPixels` は元画像上の重ね幅（0なら補正なし、補正する場合は2以上かつ画像幅の半分未満の整数）です。既定ステージは同ファイルの `DEFAULT_STAGE` で選びます。
+
+シーンを開始・再起動する側から `{ stage: STAGES.対象 }` を渡すこともできます（例：`scene.start("walk", { stage: STAGES.teaRiver })`）。画像パスや寸法を `WalkScene.ts` に埋め込む必要はありません。新しい素材でも継ぎ目と地面付近の構図を確認してください。大きく異なる左右の構図を、重ね処理だけで自然につなぐことはできません。
+
+制作・確認の到達点は [STATUS](../../docs/STATUS.md) を参照してください。
 
 足場や操作ボタン、クイズ本文、Resultの文字はゲーム側で描画する想定です。任意サイズに伸ばす地形タイルや完成したステージマップは今回の素材には含みません。
 

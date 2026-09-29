@@ -2,11 +2,14 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, PLAYER, WORLD } from "../movement";
+import { backgroundAsset, DEFAULT_STAGE } from "../stages";
+import type { StageDefinition } from "../stages";
+import { RepeatingScenery } from "../RepeatingScenery";
+import { rebaseBody, rebaseShift } from "../scrolling";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
 });
-const backgroundUrl = new URL("../kikimaru-assets/assets/backgrounds/tea_river.png", import.meta.url).href;
 type RigPart = (typeof rig.views.right)[number];
 
 export class WalkScene extends Phaser.Scene {
@@ -19,17 +22,34 @@ export class WalkScene extends Phaser.Scene {
   private phase = 0;
   private clock = 0;
   private loadFailed = false;
+  private stageDefinition: StageDefinition = DEFAULT_STAGE;
+  private scenery!: RepeatingScenery;
+  private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
 
   constructor() { super("walk"); }
 
+  init(data: { stage?: StageDefinition } = {}): void {
+    this.stageDefinition = data.stage ?? DEFAULT_STAGE;
+    this.loadFailed = false;
+    this.parts = [];
+    this.facing = 1;
+    this.phase = 0;
+    this.clock = 0;
+    this.previousPlayerX = WORLD.width / 2;
+    this.controls.clear();
+  }
+
   preload(): void {
-    this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, () => {
+    const onLoadError = () => {
       this.loadFailed = true;
       document.querySelector<HTMLElement>("#loading")!.textContent = "画像を読み込めませんでした。開発サーバーを起動して再読み込みしてください。";
       this.status.textContent = "画像の読み込みエラー";
-    });
-    this.load.image("background", backgroundUrl);
+    };
+    this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError));
+    const background = backgroundAsset(this.stageDefinition);
+    this.load.image(background.key, background.url);
     for (const part of new Set(rig.views.right.map(item => item.part))) {
       this.load.image(part, partUrls[`../kikimaru-assets/assets/character/right/${part}.png`]);
     }
@@ -37,13 +57,8 @@ export class WalkScene extends Phaser.Scene {
 
   create(): void {
     if (this.loadFailed) return;
-    const background = this.add.image(WORLD.width / 2, WORLD.height / 2, "background");
-    background.setScale(Math.max(WORLD.width / background.width, WORLD.height / background.height));
-    this.add.rectangle(0, 0, WORLD.width, WORLD.height, 0xf9f7e7, 0.1).setOrigin(0);
-    this.add.rectangle(0, WORLD.ground - 3, WORLD.width, 10, 0xc1cc97).setOrigin(0);
-    this.add.rectangle(0, WORLD.ground + 7, WORLD.width, WORLD.height - WORLD.ground, 0xe8d9b8).setOrigin(0);
-    const marks = this.add.graphics().fillStyle(0xd5c29e);
-    for (let x = 20; x < WORLD.width; x += 63) marks.fillRect(x, WORLD.ground + 33 + (x % 5) * 8, 9, 2);
+    this.scenery = new RepeatingScenery(this, this.stageDefinition);
+    this.cameras.main.setScroll(0, 0);
 
     this.makeApron();
     this.shadow = this.add.ellipse(WORLD.width / 2, WORLD.ground + 3, 94, 16, 0x58456a, 0.15);
@@ -60,8 +75,7 @@ export class WalkScene extends Phaser.Scene {
     this.physics.add.existing(hitbox);
     this.body = hitbox.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true).setBounce(0);
-    const inset = WORLD.margin - PLAYER.width / 2;
-    this.physics.world.setBounds(inset, 0, WORLD.width - inset * 2, WORLD.ground);
+    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.ground, false, false, true, true);
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
     const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
@@ -80,6 +94,7 @@ export class WalkScene extends Phaser.Scene {
   }
 
   private makeApron(): void {
+    if (this.textures.exists("apron-colored")) return;
     // Pre-compose only the apron to preserve the original look in both Canvas and WebGL.
     const source = this.textures.get("apron_tint").getSourceImage() as HTMLImageElement;
     const canvas = document.createElement("canvas");
@@ -102,10 +117,19 @@ export class WalkScene extends Phaser.Scene {
     this.facing = 1;
     this.phase = 0;
     this.clock = 0;
+    this.previousPlayerX = WORLD.width / 2;
+    this.scenery.reset();
+    this.cameras.main.setScroll(0, 0);
+    this.animate(false, false, 0);
   }
 
   update(_time: number, delta: number): void {
-    if (!this.body || this.physics.world.isPaused) return;
+    if (this.loadFailed || !this.body || this.physics.world.isPaused) return;
+    this.scenery.advance(this.body.center.x - this.previousPlayerX);
+    const shift = rebaseShift(this.body.center.x, WORLD.width / 2);
+    if (shift) rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
+    this.previousPlayerX = this.body.center.x;
+    this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const movement = applyMovement(this.body, this.controls);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);

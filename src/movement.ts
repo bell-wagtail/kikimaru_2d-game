@@ -1,6 +1,6 @@
 import type { InputState } from "./input.ts";
 
-export const WORLD = { width: 1200, height: 650, ground: 550, margin: 85 } as const;
+export const WORLD = { width: 1200, height: 650, ground: 550 } as const;
 export const PLAYER = { width: 90, height: 180, scale: 0.39, speed: 260, jumpSpeed: 620, gravity: 1600 } as const;
 
 export interface MotionBody {
