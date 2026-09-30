@@ -133,10 +133,11 @@ export class WalkScene extends Phaser.Scene {
     if (shift) rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
-    const movement = applyMovement(this.body, this.controls, this.movementState);
+    const dt = Math.min(delta / 1000, 0.05);
+    const movement = applyMovement(this.body, this.controls, this.movementState, dt);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
-    this.animate(movement.walking, airborne, Math.min(delta / 1000, 0.05), movement.dashing ? PLAYER.dashMultiplier : 1);
+    this.animate(movement.walking, airborne, dt, movement.pace);
     const directionLabel = this.facing === 1 ? "右へ" : "左へ";
     const label = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
       : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`

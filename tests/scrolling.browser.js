@@ -53,46 +53,61 @@ run.addEventListener("click", async () => {
   try {
     document.querySelector("#reset").click();
     step();
-    key("ShiftLeft", true); step();
-    near(scene.body.velocity.x, 0, "Shift単独で移動しない");
-    key("ArrowRight", true); step();
-    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "Shiftで加速");
+    const frames = count => { for (let i = 0; i < count; i++) step(); };
+    const gain = (PLAYER.speed * PLAYER.dashMultiplier - PLAYER.speed) / PLAYER.accelerationSeconds;
+    key("ShiftLeft", true); frames(180);
+    near(scene.body.velocity.x, 0, "Shift単独で移動・助走しない");
+    key("ArrowRight", true); frames(60);
+    near(scene.body.velocity.x, PLAYER.speed + gain, "1秒の加速");
+    key("ShiftRight", true); key("ShiftLeft", false); frames(60);
+    near(scene.body.velocity.x, PLAYER.speed + gain * 2, "片方のShift解除でも加速を継続");
+    key("ShiftRight", false); frames(60);
+    near(scene.body.velocity.x, PLAYER.speed + gain, "1秒の減速");
+    key("ShiftLeft", true); frames(120);
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "再加速で最高速度");
     assert(document.querySelector("#state").textContent === "右へダッシュ中", "ダッシュの表示");
-    key("ShiftRight", true); key("ShiftLeft", false); step();
-    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "片方のShift解除で維持");
-    key("ShiftRight", false); step();
-    near(scene.body.velocity.x, PLAYER.speed, "Shift解除で通常速度");
-    key("Space", true); step(); key("Space", false);
-    near(scene.body.velocity.y, -PLAYER.jumpSpeed, "通常ジャンプの初速");
-    key("ShiftLeft", true); step();
-    near(scene.body.velocity.x, PLAYER.speed, "徒歩ジャンプ中のShiftで加速しない");
-    near(scene.body.velocity.y, -PLAYER.jumpSpeed + PLAYER.gravity / 60, "Shiftで鉛直速度を変えない");
-    assert(document.querySelector("#state").textContent === "ジャンプ！", "徒歩ジャンプの表示を維持");
-    for (let frame = 0; frame < 120 && !scene.body.blocked.down; frame++) {
-      step();
-      if (!scene.body.blocked.down) near(scene.body.velocity.x, PLAYER.speed, "着地までは徒歩速度");
+    key("ShiftLeft", false); frames(180);
+    near(scene.body.velocity.x, PLAYER.speed, "3秒で徒歩速度まで減速");
+    pass("Shift単独・左右Shift併用・連続加減速・2秒加速→1秒減速→2秒加速・表示");
+
+    const flights = [];
+    for (const runUp of [0, 1, 3]) {
+      document.querySelector("#reset").click(); step();
+      key("ArrowRight", true);
+      if (runUp) key("ShiftLeft", true);
+      frames(runUp * 60);
+      // Freeze the acceleration on the launch update to sample the exact run-up speed.
+      key("Space", true); scene.update(time, 0); key("Space", false);
+      const speed = scene.body.velocity.x;
+      near(speed, PLAYER.speed + gain * runUp, "踏切速度");
+      near(scene.body.velocity.y, -PLAYER.jumpSpeed, "速度に依存しないジャンプ初速");
+      key("ShiftLeft", runUp === 0);
+      const startX = scene.body.center.x;
+      let peak = scene.body.bottom, duration = 0;
+      do {
+        step(); duration++;
+        peak = Math.min(peak, scene.body.bottom);
+        if (!scene.body.blocked.down) near(scene.body.velocity.x, speed, "空中のShift操作で速度が変わらない");
+      } while (!scene.body.blocked.down && duration < 120);
+      assert(scene.body.blocked.down, "ジャンプが着地");
+      near(scene.body.velocity.x, speed + (runUp === 0 ? gain : -gain) / 60, "着地から加減速再開");
+      flights.push({ peak, duration, distance: scene.body.center.x - startX, speed });
     }
-    assert(scene.body.blocked.down, "徒歩ジャンプが着地");
-    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "着地後に押下中のShiftを反映");
-    key("Space", true); step(); key("Space", false);
-    near(scene.body.velocity.y, -PLAYER.jumpSpeed, "ダッシュジャンプの初速");
-    key("ShiftLeft", false); step();
-    assert(document.querySelector("#state").textContent === "ダッシュジャンプ！", "ダッシュジャンプの表示を維持");
-    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "空中でShiftを離してもダッシュ速度");
-    for (let frame = 0; frame < 120 && !scene.body.blocked.down; frame++) {
-      step();
-      if (!scene.body.blocked.down) near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "着地まではダッシュ速度");
+    for (const flight of flights) {
+      near(flight.peak, flights[0].peak, "全速度で最高到達点が一致");
+      near(flight.duration, flights[0].duration, "全速度で滞空時間が一致");
+      near(flight.distance / flight.speed, flights[0].distance / flights[0].speed, "飛距離は踏切速度に比例");
     }
-    assert(scene.body.blocked.down, "ダッシュジャンプが着地");
-    near(scene.body.velocity.x, PLAYER.speed, "着地後にShift解除を反映");
-    key("ArrowRight", false);
-    pass("Shift単独・左右Shift併用・地上の速度切替・徒歩／ダッシュの踏切速度維持・着地時のShift反映・表示");
+    assert(flights[0].distance < flights[1].distance && flights[1].distance < flights[2].distance, "助走に応じて飛距離が増加");
+    pass("徒歩・加速途中・最高速度のジャンプ：高さと滞空時間一定・飛距離は速度依存・空中維持・着地後の加減速");
     document.querySelector("#reset").click(); step();
     const count = scene.children.length;
     const partCount = scene.parts.length;
     for (const [code, sign, dash] of [["ArrowRight",1,false],["ArrowLeft",-1,false],["ArrowRight",1,true],["ArrowLeft",-1,true]]) {
+      document.querySelector("#reset").click(); step();
       if (dash) key("ShiftLeft", true);
       key(code, true);
+      frames(PLAYER.accelerationSeconds * 60);
       let rebases = 0, landed = false, jumped = false, airborneRebase = false;
       for (let frame = 0; frame < 12000; frame++) {
         // Jump just before each origin shift to exercise in-flight rebasing.
