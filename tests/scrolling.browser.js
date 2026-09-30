@@ -53,9 +53,29 @@ run.addEventListener("click", async () => {
   try {
     document.querySelector("#reset").click();
     step();
+    key("ShiftLeft", true); step();
+    near(scene.body.velocity.x, 0, "Shift単独で移動しない");
+    key("ArrowRight", true); step();
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "Shiftで加速");
+    assert(document.querySelector("#state").textContent === "右へダッシュ中", "ダッシュの表示");
+    key("ShiftRight", true); key("ShiftLeft", false); step();
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "片方のShift解除で維持");
+    key("ShiftRight", false); step();
+    near(scene.body.velocity.x, PLAYER.speed, "Shift解除で通常速度");
+    key("Space", true); step(); key("Space", false);
+    near(scene.body.velocity.y, -PLAYER.jumpSpeed, "通常ジャンプの初速");
+    key("ShiftLeft", true); step();
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "空中ダッシュ");
+    near(scene.body.velocity.y, -PLAYER.jumpSpeed + PLAYER.gravity / 60, "ダッシュで鉛直速度を変えない");
+    key("ShiftLeft", false); step();
+    near(scene.body.velocity.x, PLAYER.speed, "空中でダッシュ解除");
+    key("ArrowRight", false);
+    pass("Shift単独・左右Shift併用・加速と解除・空中の速度切替・状態表示");
+    document.querySelector("#reset").click(); step();
     const count = scene.children.length;
     const partCount = scene.parts.length;
-    for (const [code, sign] of [["ArrowRight",1],["ArrowLeft",-1]]) {
+    for (const [code, sign, dash] of [["ArrowRight",1,false],["ArrowLeft",-1,false],["ArrowRight",1,true],["ArrowLeft",-1,true]]) {
+      if (dash) key("ShiftLeft", true);
       key(code, true);
       let rebases = 0, landed = false, jumped = false, airborneRebase = false;
       for (let frame = 0; frame < 12000; frame++) {
@@ -67,6 +87,7 @@ run.addEventListener("click", async () => {
         const oldPhase = scene.scenery.background.tilePositionX;
         const velocity = scene.body.velocity.x;
         step();
+        near(scene.body.velocity.x, sign * PLAYER.speed * (dash ? PLAYER.dashMultiplier : 1), "移動速度");
         if (launch) key("Space", false);
         const expected = advanceTile(oldPhase, velocity/60, scene.scenery.scale, scene.scenery.factor, scene.scenery.backgroundWidth);
         near(scene.scenery.background.tilePositionX, expected, "背景の連続性");
@@ -83,8 +104,9 @@ run.addEventListener("click", async () => {
         assert(scene.children.length === count, "表示オブジェクトの増加");
       }
       key(code, false);
+      if (dash) key("ShiftLeft", false);
       assert(rebases >= 5 && airborneRebase && landed, "座標補正・ジャンプ・着地の未検証");
-      pass(`${sign > 0 ? "右" : "左"}へ200秒相当：反復・座標補正${rebases}回・補正中のジャンプと着地`);
+      pass(`${dash ? "ダッシュで" : "通常速度で"}${sign > 0 ? "右" : "左"}へ200秒相当：反復・座標補正${rebases}回・補正中のジャンプと着地`);
     }
     step();
     const stopped = scene.scenery.background.tilePositionX;
@@ -95,20 +117,26 @@ run.addEventListener("click", async () => {
     near(scene.body.velocity.x,0,"左右同時入力");
     key("ArrowLeft",false); key("ArrowRight",false);
     pass("停止・左右同時入力");
-    key("ArrowRight",true); step();
+    key("ArrowRight",true); key("ShiftLeft",true); step();
     game.events.emit(Phaser.Core.Events.BLUR);
     assert(scene.physics.world.isPaused && scene.body.velocity.x === 0, "フォーカス喪失で停止しない");
     game.events.emit(Phaser.Core.Events.FOCUS);
     key("ArrowRight",false); step();
     assert(!scene.physics.world.isPaused && scene.body.velocity.x === 0, "復帰で勝手に移動");
-    pass("フォーカス喪失と復帰");
+    key("ArrowRight",true); step();
+    near(scene.body.velocity.x, PLAYER.speed, "復帰後にダッシュが残らない");
+    key("ShiftLeft",false); key("ShiftLeft",true); step();
+    pass("ダッシュ中のフォーカス喪失と復帰");
     document.querySelector("#reset").click();
     step();
     near(scene.body.center.x, WORLD.width/2, "リセット位置");
     near(scene.cameras.main.scrollX, 0, "カメラリセット");
     near(scene.scenery.background.tilePositionX,0,"背景リセット");
     near(scene.scenery.ground.tilePositionX,0,"地面リセット");
-    pass("開始位置・背景・地面・カメラのリセット");
+    key("ArrowRight",true); step();
+    near(scene.body.velocity.x, PLAYER.speed, "リセット後にダッシュが残らない");
+    key("ShiftLeft",false); key("ArrowRight",false); step();
+    pass("開始位置・背景・地面・カメラ・ダッシュのリセット");
 
     const variant = { id: "test-stage", background: { ...STAGES.teaRiver.background, scrollFactor: 0.5, seamBlendPixels: 0 } };
     const recreated = new Promise(resolve => scene.events.once("create", resolve));
@@ -134,9 +162,9 @@ run.addEventListener("click", async () => {
     render();
   } finally {
     key("ArrowLeft",false); key("ArrowRight",false); key("Space",false);
+    key("ShiftLeft",false); key("ShiftRight",false);
     run.disabled = false;
     game.loop.start(game.step.bind(game));
   }
 });
-
 

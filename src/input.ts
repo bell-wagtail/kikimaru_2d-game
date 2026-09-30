@@ -1,8 +1,9 @@
-export type Action = "left" | "right" | "jump";
+export type Action = "left" | "right" | "jump" | "dash";
 
 export const keyActions: Readonly<Record<string, Action>> = {
   ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
-  Space: "jump", ArrowUp: "jump", KeyW: "jump"
+  Space: "jump", ArrowUp: "jump", KeyW: "jump",
+  ShiftLeft: "dash", ShiftRight: "dash"
 };
 
 export class InputState {
@@ -54,7 +55,8 @@ export function bindControls(state: InputState, reset: () => void): () => void {
     if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true']")) return;
     // Preserve native Space activation when a real button has keyboard focus.
     if (event.code === "Space" && event.target instanceof HTMLButtonElement) return;
-    event.preventDefault();
+    // Keep Shift available to browser navigation such as Shift+Tab.
+    if (action !== "dash") event.preventDefault();
     if (!event.repeat) state.press(`key:${event.code}`, action);
     refresh();
   }, options);
