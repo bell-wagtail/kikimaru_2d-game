@@ -65,12 +65,28 @@ run.addEventListener("click", async () => {
     key("Space", true); step(); key("Space", false);
     near(scene.body.velocity.y, -PLAYER.jumpSpeed, "通常ジャンプの初速");
     key("ShiftLeft", true); step();
-    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "空中ダッシュ");
-    near(scene.body.velocity.y, -PLAYER.jumpSpeed + PLAYER.gravity / 60, "ダッシュで鉛直速度を変えない");
+    near(scene.body.velocity.x, PLAYER.speed, "徒歩ジャンプ中のShiftで加速しない");
+    near(scene.body.velocity.y, -PLAYER.jumpSpeed + PLAYER.gravity / 60, "Shiftで鉛直速度を変えない");
+    assert(document.querySelector("#state").textContent === "ジャンプ！", "徒歩ジャンプの表示を維持");
+    for (let frame = 0; frame < 120 && !scene.body.blocked.down; frame++) {
+      step();
+      if (!scene.body.blocked.down) near(scene.body.velocity.x, PLAYER.speed, "着地までは徒歩速度");
+    }
+    assert(scene.body.blocked.down, "徒歩ジャンプが着地");
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "着地後に押下中のShiftを反映");
+    key("Space", true); step(); key("Space", false);
+    near(scene.body.velocity.y, -PLAYER.jumpSpeed, "ダッシュジャンプの初速");
     key("ShiftLeft", false); step();
-    near(scene.body.velocity.x, PLAYER.speed, "空中でダッシュ解除");
+    assert(document.querySelector("#state").textContent === "ダッシュジャンプ！", "ダッシュジャンプの表示を維持");
+    near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "空中でShiftを離してもダッシュ速度");
+    for (let frame = 0; frame < 120 && !scene.body.blocked.down; frame++) {
+      step();
+      if (!scene.body.blocked.down) near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "着地まではダッシュ速度");
+    }
+    assert(scene.body.blocked.down, "ダッシュジャンプが着地");
+    near(scene.body.velocity.x, PLAYER.speed, "着地後にShift解除を反映");
     key("ArrowRight", false);
-    pass("Shift単独・左右Shift併用・加速と解除・空中の速度切替・状態表示");
+    pass("Shift単独・左右Shift併用・地上の速度切替・徒歩／ダッシュの踏切速度維持・着地時のShift反映・表示");
     document.querySelector("#reset").click(); step();
     const count = scene.children.length;
     const partCount = scene.parts.length;
@@ -167,4 +183,3 @@ run.addEventListener("click", async () => {
     game.loop.start(game.step.bind(game));
   }
 });
-

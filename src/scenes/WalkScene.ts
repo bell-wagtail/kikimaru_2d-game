@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
-import { applyMovement, PLAYER, WORLD } from "../movement";
+import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
 import { backgroundAsset, DEFAULT_STAGE } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
@@ -14,6 +14,7 @@ type RigPart = (typeof rig.views.right)[number];
 
 export class WalkScene extends Phaser.Scene {
   private controls = new InputState();
+  private movementState = new MovementState();
   private body!: Phaser.Physics.Arcade.Body;
   private actor!: Phaser.GameObjects.Container;
   private shadow!: Phaser.GameObjects.Ellipse;
@@ -38,6 +39,7 @@ export class WalkScene extends Phaser.Scene {
     this.clock = 0;
     this.previousPlayerX = WORLD.width / 2;
     this.controls.clear();
+    this.movementState.reset();
   }
 
   preload(): void {
@@ -112,6 +114,7 @@ export class WalkScene extends Phaser.Scene {
 
   private resetPlayer(): void {
     this.controls.clear();
+    this.movementState.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
     this.facing = 1;
@@ -130,7 +133,7 @@ export class WalkScene extends Phaser.Scene {
     if (shift) rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
-    const movement = applyMovement(this.body, this.controls);
+    const movement = applyMovement(this.body, this.controls, this.movementState);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
     this.animate(movement.walking, airborne, Math.min(delta / 1000, 0.05), movement.dashing ? PLAYER.dashMultiplier : 1);
