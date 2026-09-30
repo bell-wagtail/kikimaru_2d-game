@@ -57,21 +57,21 @@ run.addEventListener("click", async () => {
     const gain = (PLAYER.speed * PLAYER.dashMultiplier - PLAYER.speed) / PLAYER.accelerationSeconds;
     key("ShiftLeft", true); frames(180);
     near(scene.body.velocity.x, 0, "Shift単独で移動・助走しない");
-    key("ArrowRight", true); frames(60);
-    near(scene.body.velocity.x, PLAYER.speed + gain, "1秒の加速");
-    key("ShiftRight", true); key("ShiftLeft", false); frames(60);
-    near(scene.body.velocity.x, PLAYER.speed + gain * 2, "片方のShift解除でも加速を継続");
-    key("ShiftRight", false); frames(60);
-    near(scene.body.velocity.x, PLAYER.speed + gain, "1秒の減速");
-    key("ShiftLeft", true); frames(120);
+    key("ArrowRight", true); frames(30);
+    near(scene.body.velocity.x, PLAYER.speed + gain * 0.5, "0.5秒の加速");
+    key("ShiftRight", true); key("ShiftLeft", false); frames(30);
+    near(scene.body.velocity.x, PLAYER.speed + gain, "片方のShift解除でも加速を継続");
+    key("ShiftRight", false); frames(30);
+    near(scene.body.velocity.x, PLAYER.speed + gain * 0.5, "0.5秒の減速");
+    key("ShiftLeft", true); frames(60);
     near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "再加速で最高速度");
     assert(document.querySelector("#state").textContent === "右へダッシュ中", "ダッシュの表示");
-    key("ShiftLeft", false); frames(180);
-    near(scene.body.velocity.x, PLAYER.speed, "3秒で徒歩速度まで減速");
-    pass("Shift単独・左右Shift併用・連続加減速・2秒加速→1秒減速→2秒加速・表示");
+    key("ShiftLeft", false); frames(PLAYER.decelerationSeconds * 60);
+    near(scene.body.velocity.x, PLAYER.speed, "設定時間で徒歩速度まで減速");
+    pass("Shift単独・左右Shift併用・連続加減速・1秒加速→0.5秒減速→1秒加速・表示");
 
     const flights = [];
-    for (const runUp of [0, 1, 3]) {
+    for (const runUp of [0, 1, PLAYER.accelerationSeconds]) {
       document.querySelector("#reset").click(); step();
       key("ArrowRight", true);
       if (runUp) key("ShiftLeft", true);

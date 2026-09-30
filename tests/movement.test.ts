@@ -35,11 +35,11 @@ test("either Shift ramps both directions to the cap and back over the configured
   }
 });
 
-test("2 seconds accelerating, 1 slowing and 2 accelerating preserve progress and reach the cap", () => {
+test("1 second accelerating, 0.5 slowing and 1 accelerating preserve progress and reach the cap", () => {
   const { input, body, advance } = setup();
-  input.press("shift", "dash"); advance(2); near(body.vx, PLAYER.speed + gain * 2);
-  input.release("shift"); advance(1); near(body.vx, PLAYER.speed + gain);
-  input.press("shift", "dash"); advance(2); near(body.vx, maxSpeed);
+  input.press("shift", "dash"); advance(1); near(body.vx, PLAYER.speed + gain);
+  input.release("shift"); advance(0.5); near(body.vx, PLAYER.speed + gain * 0.5);
+  input.press("shift", "dash"); advance(1); near(body.vx, maxSpeed);
 });
 
 test("elapsed time gives the same acceleration at 30, 60 and 144 updates per second", () => {
@@ -51,7 +51,7 @@ test("elapsed time gives the same acceleration at 30, 60 and 144 updates per sec
   }
 });
 
-for (const runUp of [0, 1, 3]) test(`jump after ${runUp} seconds keeps its exact launch speed until landing`, () => {
+for (const runUp of [0, 1, PLAYER.accelerationSeconds]) test(`jump after ${runUp} seconds keeps its exact launch speed until landing`, () => {
   for (const direction of [-1, 1]) {
     const { input, body, motion, step, advance } = setup(direction);
     if (runUp) { input.press("shift", "dash"); advance(runUp); }
@@ -72,7 +72,7 @@ for (const runUp of [0, 1, 3]) test(`jump after ${runUp} seconds keeps its exact
 
 test("a jump during deceleration keeps the remaining speed rather than dropping to walking speed", () => {
   const { input, body, step, advance } = setup();
-  input.press("shift", "dash"); advance(3);
+  input.press("shift", "dash"); advance(PLAYER.accelerationSeconds);
   input.release("shift"); advance(1);
   input.press("jump", "jump"); step(0);
   body.blocked.down = false; advance(1);
@@ -112,8 +112,8 @@ test("reset clears the saved speed even in the air", () => {
 test("releasing one Shift keeps acceleration active while the other is held", () => {
   const { input, body, advance } = setup();
   input.press("ShiftLeft", "dash"); input.press("ShiftRight", "dash");
-  advance(1); input.release("ShiftLeft"); advance(1); near(body.vx, PLAYER.speed + gain * 2);
-  input.release("ShiftRight"); advance(1); near(body.vx, PLAYER.speed + gain);
+  advance(0.5); input.release("ShiftLeft"); advance(0.5); near(body.vx, PLAYER.speed + gain);
+  input.release("ShiftRight"); advance(0.5); near(body.vx, PLAYER.speed + gain * 0.5);
 });
 
 test("separate touch pointers can move and jump, while held or airborne presses cannot repeat jumps", () => {
