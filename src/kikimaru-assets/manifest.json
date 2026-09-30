@@ -388,6 +388,14 @@
       "width": 1536,
       "height": 1024,
       "seamless": false
+    },
+    {
+      "key": "background/tea_river_repeat_x",
+      "path": "assets/backgrounds/tea_river_repeat_x.png",
+      "width": 1536,
+      "height": 1024,
+      "repeatX": true,
+      "repeatY": false
     }
   ]
 }
