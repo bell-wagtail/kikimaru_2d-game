@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
-import { applyMovement, PLAYER, WORLD } from "../movement";
+import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
 import { backgroundAsset, DEFAULT_STAGE } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
@@ -14,6 +14,7 @@ type RigPart = (typeof rig.views.right)[number];
 
 export class WalkScene extends Phaser.Scene {
   private controls = new InputState();
+  private movementState = new MovementState();
   private body!: Phaser.Physics.Arcade.Body;
   private actor!: Phaser.GameObjects.Container;
   private shadow!: Phaser.GameObjects.Ellipse;
@@ -38,6 +39,7 @@ export class WalkScene extends Phaser.Scene {
     this.clock = 0;
     this.previousPlayerX = WORLD.width / 2;
     this.controls.clear();
+    this.movementState.reset();
   }
 
   preload(): void {
@@ -112,6 +114,7 @@ export class WalkScene extends Phaser.Scene {
 
   private resetPlayer(): void {
     this.controls.clear();
+    this.movementState.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
     this.facing = 1;
@@ -130,17 +133,21 @@ export class WalkScene extends Phaser.Scene {
     if (shift) rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
-    const movement = applyMovement(this.body, this.controls);
+    const dt = Math.min(delta / 1000, 0.05);
+    const movement = applyMovement(this.body, this.controls, this.movementState, dt);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
-    this.animate(movement.walking, airborne, Math.min(delta / 1000, 0.05));
-    const label = airborne ? "ジャンプ！" : movement.walking ? (this.facing === 1 ? "右へおさんぽ中" : "左へおさんぽ中") : "ひとやすみ · Spaceでジャンプ";
+    this.animate(movement.walking, airborne, dt, movement.pace);
+    const directionLabel = this.facing === 1 ? "右へ" : "左へ";
+    const label = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
+      : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`
+      : "ひとやすみ · Spaceでジャンプ";
     if (this.status.textContent !== label) this.status.textContent = label;
   }
 
-  private animate(walking: boolean, airborne: boolean, dt: number): void {
+  private animate(walking: boolean, airborne: boolean, dt: number, pace = 1): void {
     this.clock += dt;
-    this.phase = walking ? this.phase + dt * 12 : 0;
+    this.phase = walking ? this.phase + dt * 12 * pace : 0;
     const bob = airborne ? 0 : walking ? Math.abs(Math.sin(this.phase)) * 6 : Math.sin(this.clock * 2.5) * 2;
     this.actor.setPosition(this.body.center.x, this.body.bottom - bob * PLAYER.scale);
     this.actor.setScale(PLAYER.scale * this.facing, PLAYER.scale);
