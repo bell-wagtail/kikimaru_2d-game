@@ -3,7 +3,7 @@ import type { InputState } from "./input.ts";
 export const WORLD = { width: 1200, height: 650, ground: 550 } as const;
 export const PLAYER = {
   width: 90, height: 180, scale: 0.39,
-  speed: 260, dashMultiplier: 1.6, accelerationSeconds: 1.5, decelerationSeconds: 1.5,
+  speed: 260, dashMultiplier: 1.6, accelerationSeconds: 1.0, decelerationSeconds: 1.0,
   jumpSpeed: 620, gravity: 1600
 } as const;
 
