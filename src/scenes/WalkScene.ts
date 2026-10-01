@@ -2,10 +2,12 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, DEFAULT_STAGE } from "../stages";
+import { backgroundAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
+import { FixedObstacles } from "../FixedObstacles";
+import { validateObstacles } from "../obstacles";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -25,6 +27,7 @@ export class WalkScene extends Phaser.Scene {
   private loadFailed = false;
   private stageDefinition: StageDefinition = DEFAULT_STAGE;
   private scenery!: RepeatingScenery;
+  private obstacles!: FixedObstacles;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
 
@@ -52,6 +55,12 @@ export class WalkScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError));
     const background = backgroundAsset(this.stageDefinition);
     this.load.image(background.key, background.url);
+    const obstacles = this.stageDefinition.obstacles ?? [];
+    validateObstacles(obstacles);
+    for (const kind of new Set(obstacles.map(obstacle => obstacle.kind))) {
+      const asset = obstacleAsset(kind);
+      this.load.image(asset.key, asset.url);
+    }
     for (const part of new Set(rig.views.right.map(item => item.part))) {
       this.load.image(part, partUrls[`../kikimaru-assets/assets/character/right/${part}.png`]);
     }
@@ -60,6 +69,7 @@ export class WalkScene extends Phaser.Scene {
   create(): void {
     if (this.loadFailed) return;
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
+    this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
     this.cameras.main.setScroll(0, 0);
 
     this.makeApron();
@@ -78,6 +88,7 @@ export class WalkScene extends Phaser.Scene {
     this.body = hitbox.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true).setBounce(0);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.ground, false, false, true, true);
+    this.physics.add.collider(hitbox, this.obstacles.group);
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
     const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
@@ -115,6 +126,7 @@ export class WalkScene extends Phaser.Scene {
   private resetPlayer(): void {
     this.controls.clear();
     this.movementState.reset();
+    this.obstacles.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
     this.facing = 1;
@@ -130,10 +142,16 @@ export class WalkScene extends Phaser.Scene {
     if (this.loadFailed || !this.body || this.physics.world.isPaused) return;
     this.scenery.advance(this.body.center.x - this.previousPlayerX);
     const shift = rebaseShift(this.body.center.x, WORLD.width / 2);
-    if (shift) rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
+    if (shift) {
+      rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
+      this.obstacles.rebase(shift);
+    }
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const dt = Math.min(delta / 1000, 0.05);
+    const contacts = this.obstacles.contacts(this.body);
+    this.body.blocked.left ||= contacts.left;
+    this.body.blocked.right ||= contacts.right;
     const movement = applyMovement(this.body, this.controls, this.movementState, dt);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
