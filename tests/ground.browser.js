@@ -1,5 +1,5 @@
 import { PLAYER, WORLD } from "../src/movement.ts";
-import { STAGES, STAGE_MAP_GRID, pitAsset } from "../src/stages.ts";
+import { STAGES, STAGE_MAP_GRID } from "../src/stages.ts";
 import { parseStageMap } from "../src/stageMap.ts";
 import { REBASE_DISTANCE } from "../src/scrolling.ts";
 
@@ -13,7 +13,6 @@ export async function verifyGround({ scene, key, step, restart, pass, assert, ne
   };
   const pit = { id: "pit", x: 1000, width: 180 };
   const stage = { id: "hole-test", background: STAGES.teaRiver.background, holes: [pit] };
-  const artwork = pitAsset();
   const aligned = () => {
     for (const { definition, image } of scene.ground.openings) {
       near(image.x, definition.x - scene.ground.originX, "穴の表示座標");
@@ -21,10 +20,13 @@ export async function verifyGround({ scene, key, step, restart, pass, assert, ne
       assert(!scene.ground.hasFloorAt(image.x + image.width / 2), "穴に床がない");
       const left = image.list.find(part => part.frame?.name === "pit-left");
       const right = image.list.find(part => part.frame?.name === "pit-right");
-      assert(left?.texture.key === artwork.key && right?.texture.key === artwork.key, "穴専用の画像を使用");
-      near(image.x + left.x + artwork.slices.leftWallX * left.scaleX, definition.x - scene.ground.originX, "穴の左壁の素材と物理境界");
-      near(image.x + right.x + (artwork.slices.rightWallX - artwork.width + artwork.slices.rightWidth) * right.scaleX,
-        definition.x + definition.width - scene.ground.originX, "穴の右壁の素材と物理境界");
+      assert(left && right, "穴の両側に土壁がある");
+      near(image.x + left.x, definition.x - scene.ground.originX, "穴の左壁の素材と物理境界");
+      near(image.x + right.x + right.displayWidth, definition.x + definition.width - scene.ground.originX, "穴の右壁の素材と物理境界");
+      near(image.y + image.height, WORLD.height, "穴の素材が画面下まで続く");
+      for (const part of image.list) {
+        assert(part.x >= 0 && part.x + part.displayWidth <= image.width + 1e-6, "穴素材が周囲の地面を上書きしない");
+      }
     }
     for (const { zone, body } of scene.ground.floors) {
       if (!body.enable) continue;
@@ -143,8 +145,16 @@ export async function verifyGround({ scene, key, step, restart, pass, assert, ne
 
   await restart({ ...stage, holes: [{ ...pit, width: pit.width * 3 }] }); aligned();
   near(scene.ground.openings[0].image.list.find(part => part.frame?.name === "pit-left").displayWidth, bankWidth, "穴を広げても土の縁を引き伸ばさない");
-  near(scene.textures.get(artwork.key).getSourceImage().width, artwork.width, "穴素材の登録寸法");
-  pass("穴を広げると中央だけが伸び、草・根・土の縁と壁の物理境界を維持");
+  const bank = scene.ground.openings[0].image.list.find(part => part.frame?.name === "pit-left");
+  const floorPixels = scene.scenery.ground.displayTexture.getSourceImage().getContext("2d");
+  const pitPixels = bank.texture.getSourceImage().getContext("2d");
+  for (const y of [18, 50, 90]) {
+    assert(String(floorPixels.getImageData(0, y, 1, 1).data) === String(pitPixels.getImageData(0, y, 1, 1).data), "穴の外縁は元の地面と同じ土の色");
+  }
+  pass("穴を広げても土壁の厚さと物理境界を維持し、外縁の土は元の地面と同色");
+
+  await restart({ ...stage, holes: [{ ...pit, width: bankWidth / 2 }] }); aligned();
+  pass("土壁より狭い穴でも素材が隣の地面へはみ出さない");
 
   await restart({ ...stage, holes: [pit, { ...pit, id: "overlapping", x: pit.x + 120 }] }); aligned();
   near(scene.ground.openings.length, 1, "重なる穴は表示もひとつにつなぐ");

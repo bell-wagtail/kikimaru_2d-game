@@ -48,17 +48,6 @@ const propUrls = import.meta.glob<string>([
   eager: true, query: "?url", import: "default"
 });
 
-const terrainUrls = import.meta.glob<string>("./kikimaru-assets/assets/terrain/*.png", {
-  eager: true, query: "?url", import: "default"
-});
-
-export function pitAsset() {
-  const asset = manifest.files.find(file => file.key === "terrain/pit" && "pitSlices" in file);
-  const url = asset && terrainUrls[`./kikimaru-assets/${asset.path}`];
-  if (!asset || !url || !asset.pitSlices) throw new Error("穴の素材と切り出し設定をmanifestに登録してください");
-  return { ...asset, url, slices: asset.pitSlices };
-}
-
 export function decorationAsset(kind: DecorationDefinition["kind"]): { key: string; url: string } {
   const asset = manifest.files.find(file => file.key === `props/${kind}`);
   const url = asset && propUrls[`./kikimaru-assets/${asset.path}`];

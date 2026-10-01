@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset, pitAsset } from "../stages";
+import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
@@ -61,10 +61,6 @@ export class WalkScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError));
     const background = backgroundAsset(this.stageDefinition);
     this.load.image(background.key, background.url);
-    if (this.stageDefinition.holes?.length) {
-      const pit = pitAsset();
-      this.load.image(pit.key, pit.url);
-    }
     const obstacles = this.stageDefinition.obstacles ?? [];
     validateObstacles(obstacles);
     for (const kind of new Set(obstacles.map(obstacle => obstacle.kind))) {

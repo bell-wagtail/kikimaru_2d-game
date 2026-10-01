@@ -34,6 +34,7 @@
 | 反復位置・長距離移動時の座標補正 | [scrolling.ts](src/scrolling.ts) |
 | 固定障害物の表示・物理ボディ・座標補正 | [FixedObstacles.ts](src/FixedObstacles.ts) |
 | 穴の表示・床の物理ボディ・座標補正・落下判定の基準 | [StageGround.ts](src/StageGround.ts) |
+| 地面と穴に共通の色・草の帯・土の模様・描画用テクスチャ | [groundTextures.ts](src/groundTextures.ts) |
 | 穴の定義と床区間・着地条件の計算 | [ground.ts](src/ground.ts) |
 
 ## フォルダの役割

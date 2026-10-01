@@ -20,7 +20,7 @@ Agentの入口はプロジェクトルートの [AGENTS.md](../../AGENTS.md) で
 | `assets/props/` | お茶、みかん、いちご、えび、魚、クイズ目印、ゴール旗、岩、ほこりの敵。9 PNG |
 | `assets/backgrounds/tea_river.png` | 茶畑・川・山里をイメージした背景。1 PNG |
 | `assets/backgrounds/tea_river_repeat_x.png` | 同じ世界観で新規制作した横方向の反復用背景。現行ステージで使用 |
-| `assets/terrain/pit.png` | 草の縁・土の断面・根と暗い奥行きのある穴用素材。左右の縁と中央を分けて描画 |
+| `assets/terrain/pit.png` | 以前制作した穴用素材。制作記録として保持し、現行ゲームでは未使用 |
 | `assets/backgrounds/previews/tea_river_repeat_x_3x.png` | 反復用背景をそのまま3枚並べた確認画像 |
 | `assets/backgrounds/previews/tea_river_repeat_x_seam.png` | 連結境界の左右を等倍で切り出した確認画像 |
 | `source-atlases/` | 元シート3枚＋修正後の直線腕1枚 |
@@ -97,11 +97,11 @@ Agentの入口はプロジェクトルートの [AGENTS.md](../../AGENTS.md) で
 
 ### 穴用素材
 
-[pit.png](assets/terrain/pit.png) は画像生成機能で制作した、正面から見た地面の穴の断面です。草と土の縁、根、暗い奥行きを含み、上部にはアルファ透過があります。底面は描かず、画面下へ続く穴として使います。背景全体を差し替える素材ではありません。
+現行の穴は [groundTextures.ts](../groundTextures.ts) で描画用のCanvasテクスチャを作ります。地面と同じ土・草・模様の色を共用し、外縁から穴の内側へ土壁の影を付けます。描画は穴の範囲内に収めるため、周囲の反復地面の色や模様を上書きしません。底面を描かず、画面下へ続く断面です。色・帯の高さ・土壁の厚さの正本は同ファイルの `GROUND_APPEARANCE` です。
 
-画像パス・実寸・切り出し幅・壁の位置・床面の高さは [manifest.json](manifest.json) の `terrain/pit` / `pitSlices` を正とします。[StageGround.ts](../StageGround.ts) が左右の縁と中央のフレームを登録し、穴の幅に応じて中央だけを伸ばします。左右の縁は画面の地面の高さに合わせた大きさを保ちます。非常に狭い穴では横の縁を縮めて収めます。元PNGの切り出し保存や上書きは行いません。
+[StageGround.ts](../StageGround.ts) が左右の土壁と中央を配置し、穴の幅に応じて中央だけを伸ばします。非常に狭い穴では横の土壁を縮めて収めます。描画の左右端は文字マップ・`holes` 定義の物理境界へ合わせます。草の小さな凹凸は装飾で、矩形当たり判定を広げません。穴の表示と床ボディは同じ座標補正・リセットへ参加します。
 
-壁の物理位置は文字マップ・`holes` 定義の左端と右端です。描画の壁の基準位置もそこへ合わせますが、草・根・土の細かな凹凸は装飾で、矩形当たり判定を広げません。穴の表示と床ボディは同じ座標補正・リセットへ参加します。生成プロンプトは [制作記録](GENERATION_PROMPTS.md) を参照してください。
+以前制作した [pit.png](assets/terrain/pit.png) は石・根・陰影の描き込みが元の地面より強かったため、現在はゲームで読み込みません。元PNGとmanifestの `terrain/pit` / `pitSlices`、[生成プロンプト](GENERATION_PROMPTS.md) は制作記録として保持しています。
 
 操作ボタン、クイズ本文、Resultの文字はゲーム側で描画する想定です。完成したステージマップは素材には含みません。
 

@@ -65,7 +65,7 @@ Preserve the original image's countryside composition, river, bridge, houses, te
 
 ## 地面の穴（2026-10-01）
 
-組み込みの画像生成ツール（imagegen）で新規生成し、[assets/terrain/pit.png](assets/terrain/pit.png) へ保存しました。参照画像を編集する形式ではなく、ゲーム画面を確認して色・構図を指定しています。上部のアルファ透過と実寸を確認しました。採用PNGは無加工で保存し、ゲーム内でmanifestの指定位置から左右の縁と中央のフレームを取り、中央部分だけを穴の幅に合わせて描画します。床面・壁の位置合わせの正本はmanifestです。
+組み込みの画像生成ツール（imagegen）で新規生成し、[assets/terrain/pit.png](assets/terrain/pit.png) へ保存しました。参照画像を編集する形式ではなく、ゲーム画面を確認して色・構図を指定しています。上部のアルファ透過と実寸を確認しました。制作時はPNGを無加工で保存し、manifestの指定位置から左右の縁と中央のフレームを取り、中央部分だけを穴の幅に合わせて描画していました。現在の採用状況・描画方式は [素材README](README.md#穴用素材) を参照してください。
 
 使用したプロンプト全文（`transparent_background: true`）：
 

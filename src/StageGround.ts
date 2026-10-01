@@ -5,7 +5,7 @@ import { PLAYER, WORLD } from "./movement";
 import { REBASE_DISTANCE } from "./scrolling";
 import { sideContacts } from "./obstacles";
 import type { Bounds } from "./obstacles";
-import { pitAsset } from "./stages";
+import { GROUND_APPEARANCE, pitTexture } from "./groundTextures";
 
 export const GROUND = { respawnTop: WORLD.height } as const;
 
@@ -48,29 +48,14 @@ export class StageGround {
   }
 
   private makeOpening(scene: Phaser.Scene, width: number): Phaser.GameObjects.Container {
-    const asset = pitAsset();
-    const { leftWidth, rightWidth, leftWallX, rightWallX, surfaceY } = asset.slices;
-    const texture = scene.textures.get(asset.key);
-    if (!texture.has("pit-left")) {
-      texture.add("pit-left", 0, 0, 0, leftWidth, asset.height);
-      texture.add("pit-middle", 0, leftWidth, 0, asset.width - leftWidth - rightWidth, asset.height);
-      texture.add("pit-right", 0, asset.width - rightWidth, 0, rightWidth, asset.height);
-    }
-    const scaleY = (WORLD.height - WORLD.ground) / (asset.height - surfaceY);
-    const leftInside = leftWidth - leftWallX;
-    const rightInside = rightWallX - (asset.width - rightWidth);
-    const scaleX = Math.min(scaleY, width / (leftInside + rightInside));
-    const height = asset.height * scaleY;
-    const image = scene.add.container(0, WORLD.ground - surfaceY * scaleY).setSize(width, height);
-    image.add(scene.add.rectangle(0, surfaceY * scaleY - 3, width, WORLD.height - WORLD.ground + 3, 0x241b14).setOrigin(0));
-    // Keep the banks at a fixed scale so wide holes do not stretch their rocks, roots, or grass.
-    image.add(scene.add.image(-leftWallX * scaleX, 0, asset.key, "pit-left").setOrigin(0)
-      .setDisplaySize(leftWidth * scaleX, height));
-    const middleWidth = width - (leftInside + rightInside) * scaleX;
-    if (middleWidth > 0) image.add(scene.add.image(leftInside * scaleX, 0, asset.key, "pit-middle").setOrigin(0)
+    const { key, bankWidth, height } = pitTexture(scene.textures);
+    const edgeWidth = Math.min(bankWidth, width / 2);
+    const image = scene.add.container(0, WORLD.ground - GROUND_APPEARANCE.surfaceOffset).setSize(width, height);
+    image.add(scene.add.image(0, 0, key, "pit-left").setOrigin(0).setDisplaySize(edgeWidth, height));
+    const middleWidth = width - edgeWidth * 2;
+    if (middleWidth > 0) image.add(scene.add.image(edgeWidth, 0, key, "pit-middle").setOrigin(0)
       .setDisplaySize(middleWidth, height));
-    image.add(scene.add.image(width - rightInside * scaleX, 0, asset.key, "pit-right").setOrigin(0)
-      .setDisplaySize(rightWidth * scaleX, height));
+    image.add(scene.add.image(width - edgeWidth, 0, key, "pit-right").setOrigin(0).setDisplaySize(edgeWidth, height));
     return image;
   }
 
