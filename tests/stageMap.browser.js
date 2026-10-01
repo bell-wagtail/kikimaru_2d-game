@@ -2,7 +2,9 @@ import { PLAYER, WORLD } from "../src/movement.ts";
 import { STAGES, STAGE_MAP_GRID } from "../src/stages.ts";
 import { parseStageMap } from "../src/stageMap.ts";
 import { REBASE_DISTANCE } from "../src/scrolling.ts";
-import text from "../src/stage-maps/tea-river.txt?raw";
+import text from "./fixtures/stairs.txt?raw";
+
+const stairStage = { ...STAGES.teaRiver, ...parseStageMap(text, STAGE_MAP_GRID) };
 
 export async function verifyStageMap({ scene, key, step, restart, pass, assert, near }) {
   const reset = () => { document.querySelector("#reset").click(); step(); };
@@ -20,15 +22,15 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
       assert(!image.body, "tea仮表示に衝突ボディがないこと");
     }
   };
-  await restart(STAGES.teaRiver);
+  await restart(stairStage);
   reset(); aligned();
   const count = scene.children.length;
-  const rocks = STAGES.teaRiver.obstacles;
+  const rocks = stairStage.obstacles;
   const lower = rocks.find(rock => rock.id === "rock-r4-c17");
   const middle = rocks.find(rock => rock.id === "rock-r3-c19");
   const upper = rocks.filter(rock => rock.id.startsWith("rock-r2-")).sort((a, b) => a.x - b.x);
   assert(lower && middle && upper.length === 5, "階段と5個の岩をマップから生成");
-  assert(scene.physics.world.staticBodies.size === rocks.length && scene.decorations.items.length === 1, "マップの配置数");
+  assert(scene.physics.world.staticBodies.size === rocks.length + 1 && scene.decorations.items.length === 1, "マップの配置数と床ボディ");
 
   key("ArrowRight", true);
   for (let i = 0; i < 300 && !scene.body.blocked.right; i++) step();
@@ -68,7 +70,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
     assert(reached, "上段の端まで移動");
   }
   assert(scene.decorations.items.length === 1, "teaを通過しても仮表示を維持");
-  near(scene.physics.world.colliders.getActive().length, 1, "仮表示には取得・衝突処理を追加しない");
+  near(scene.physics.world.colliders.getActive().length, 2, "岩・床のみ衝突し、仮表示には取得・衝突処理を追加しない");
   pass("横5個の岩上を左右に歩いても継ぎ目で停止・落下しない、teaは衝突・取得効果のない仮表示");
   reset(); aligned();
   near(scene.body.center.x, WORLD.width / 2, "高い段からのリセット位置");
@@ -98,7 +100,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
   await restart({ ...STAGES.teaRiver, ...parseStageMap(text, { ...STAGE_MAP_GRID, cellWidth: 80, cellHeight: 40 }) });
   aligned();
   for (const { body } of scene.obstacles.items) { near(body.width, 80, "変更したマス幅"); near(body.height, 40, "変更したマス高さ"); }
-  await restart(STAGES.teaRiver); aligned();
-  assert(scene.children.length === count && scene.physics.world.staticBodies.size === rocks.length, "マップ再起動で表示・ボディの重複なし");
+  await restart(stairStage); aligned();
+  assert(scene.children.length === count && scene.physics.world.staticBodies.size === rocks.length + 1, "マップ再起動で表示・ボディの重複なし");
   pass("マス幅・高さの変更を描画と当たり判定へ反映、マップ再起動・高い段からのリセット");
 }

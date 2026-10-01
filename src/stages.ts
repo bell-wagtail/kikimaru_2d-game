@@ -4,6 +4,7 @@ import type { ObstacleDefinition, ObstacleKind } from "./obstacles";
 import { parseStageMap } from "./stageMap";
 import type { StageMapGrid } from "./stageMap";
 import type { DecorationDefinition } from "./decorations";
+import type { GroundHole } from "./ground";
 import teaRiverMap from "./stage-maps/tea-river.txt?raw";
 
 export interface StageDefinition {
@@ -15,6 +16,7 @@ export interface StageDefinition {
   };
   readonly obstacles?: readonly ObstacleDefinition[];
   readonly decorations?: readonly DecorationDefinition[];
+  readonly holes?: readonly GroundHole[];
 }
 
 export const STAGE_MAP_GRID = {

@@ -36,8 +36,8 @@ test("UTF-8 BOM, Windows line endings, outer empty lines, and space cells preser
   assert.deepEqual(parseStageMap("\uFEFF\r\n o\r\nx \r\n==\r\n\r\n", grid), plain);
 });
 
-test("the shipped map contains three levels of rising steps and a five-rock upper row", () => {
-  const text = readFileSync(new URL("../src/stage-maps/tea-river.txt", import.meta.url), "utf8");
+test("the regression fixture contains three levels of rising steps and a five-rock upper row", () => {
+  const text = readFileSync(new URL("./fixtures/stairs.txt", import.meta.url), "utf8");
   const map = parseStageMap(text, grid);
   assert.equal(map.obstacles.length, 9);
   assert.equal(map.decorations.length, 1);
@@ -47,9 +47,26 @@ test("the shipped map contains three levels of rising steps and a five-rock uppe
 });
 
 test("malformed rows, missing ground, and unsupported symbols fail with a helpful location", () => {
-  for (const text of ["", "===", "x\n==", "x.\n..", "x.\n\n=="]) assert.throws(() => parseStageMap(text, grid));
+  for (const text of ["", "===", "x\n==", "x.\n=?", "x.\n\n=="]) assert.throws(() => parseStageMap(text, grid));
   assert.throws(() => parseStageMap(".?\n==", grid), /1行2列/);
   assert.throws(() => parseStageMap("=.\n==", grid), /1行1列/);
+});
+
+test("bottom-row blanks form finite holes while blanks above the floor stay empty", () => {
+  const map = parseStageMap("..........\n=..== .===", grid);
+  assert.deepEqual(map.holes, [
+    { id: "hole-c1", x: 60, width: 120 },
+    { id: "hole-c5", x: 300, width: 120 }
+  ]);
+  assert.equal(map.obstacles.length, 0);
+  assert.deepEqual(parseStageMap("...\n===", grid).holes, []);
+  assert.deepEqual(parseStageMap("...\n...", { ...grid, originX: -200, cellWidth: 80 }).holes,
+    [{ id: "hole-c0", x: -200, width: 240 }]);
+});
+
+test("the editable stage remains valid without fixing its arrangement in regression tests", () => {
+  const text = readFileSync(new URL("../src/stage-maps/tea-river.txt", import.meta.url), "utf8");
+  assert.doesNotThrow(() => parseStageMap(text, grid));
 });
 
 test("invalid cell sizes, nonfinite origins, and overflowing output coordinates are rejected", () => {

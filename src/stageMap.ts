@@ -2,6 +2,8 @@ import { validateObstacles } from "./obstacles.ts";
 import type { ObstacleDefinition } from "./obstacles.ts";
 import { validateDecorations } from "./decorations.ts";
 import type { DecorationDefinition } from "./decorations.ts";
+import { validateGroundHoles } from "./ground.ts";
+import type { GroundHole } from "./ground.ts";
 
 export interface StageMapGrid {
   readonly cellWidth: number;
@@ -13,6 +15,7 @@ export interface StageMapGrid {
 export function parseStageMap(text: string, grid: StageMapGrid): {
   obstacles: ObstacleDefinition[];
   decorations: DecorationDefinition[];
+  holes: GroundHole[];
 } {
   if (![grid.cellWidth, grid.cellHeight, grid.originX, grid.groundY].every(Number.isFinite) ||
       grid.cellWidth <= 0 || grid.cellHeight <= 0) {
@@ -22,10 +25,18 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
   const width = rows[0].length;
   if (!width || rows.some(row => row.length !== width)) throw new Error("文字マップは全行の文字数をそろえてください");
   const groundRow = rows.length - 1;
-  if (groundRow < 1 || !/^=+$/.test(rows[groundRow])) throw new Error("文字マップの最下行は地面基準の = で埋めてください");
+  if (groundRow < 1 || !/^[=. ]+$/.test(rows[groundRow])) throw new Error("文字マップの最下行は床の = と穴の . / 半角空白で指定してください");
 
   const obstacles: ObstacleDefinition[] = [];
   const decorations: DecorationDefinition[] = [];
+  const holes: GroundHole[] = [];
+  const floor = rows[groundRow];
+  for (let column = 0; column < width;) {
+    if (floor[column] === "=") { column++; continue; }
+    const start = column;
+    while (column < width && floor[column] !== "=") column++;
+    holes.push({ id: `hole-c${start}`, x: grid.originX + start * grid.cellWidth, width: (column - start) * grid.cellWidth });
+  }
   for (let row = 0; row < groundRow; row++) {
     for (let column = 0; column < width; column++) {
       const symbol = rows[row][column];
@@ -42,5 +53,6 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
   }
   validateObstacles(obstacles);
   validateDecorations(decorations);
-  return { obstacles, decorations };
+  validateGroundHoles(holes);
+  return { obstacles, decorations, holes };
 }

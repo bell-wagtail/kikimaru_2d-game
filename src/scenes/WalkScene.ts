@@ -10,6 +10,8 @@ import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
 import { StageDecorations } from "../StageDecorations";
 import { validateDecorations } from "../decorations";
+import { GROUND, StageGround } from "../StageGround";
+import { canLandOnGround } from "../ground";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -31,6 +33,7 @@ export class WalkScene extends Phaser.Scene {
   private scenery!: RepeatingScenery;
   private obstacles!: FixedObstacles;
   private decorations!: StageDecorations;
+  private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
 
@@ -78,6 +81,7 @@ export class WalkScene extends Phaser.Scene {
   create(): void {
     if (this.loadFailed) return;
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
+    this.ground = new StageGround(this, this.stageDefinition.holes ?? []);
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
     this.decorations = new StageDecorations(this, this.stageDefinition.decorations ?? []);
     this.cameras.main.setScroll(0, 0);
@@ -97,8 +101,10 @@ export class WalkScene extends Phaser.Scene {
     this.physics.add.existing(hitbox);
     this.body = hitbox.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true).setBounce(0);
-    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.ground, false, false, true, true);
+    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height, false, false, true, false);
     this.physics.add.collider(hitbox, this.obstacles.group);
+    this.physics.add.collider(hitbox, this.ground.group, undefined, () =>
+      canLandOnGround(this.body.prev.y + this.body.height, this.body.velocity.y, WORLD.ground));
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
     const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
@@ -138,6 +144,7 @@ export class WalkScene extends Phaser.Scene {
     this.movementState.reset();
     this.obstacles.reset();
     this.decorations.reset();
+    this.ground.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
     this.facing = 1;
@@ -151,12 +158,18 @@ export class WalkScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.loadFailed || !this.body || this.physics.world.isPaused) return;
+    if (this.body.top > GROUND.respawnTop) {
+      this.resetPlayer();
+      this.status.textContent = "ひとやすみ · Spaceでジャンプ";
+      return;
+    }
     this.scenery.advance(this.body.center.x - this.previousPlayerX);
     const shift = rebaseShift(this.body.center.x, WORLD.width / 2);
     if (shift) {
       rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
       this.obstacles.rebase(shift);
       this.decorations.rebase(shift);
+      this.ground.rebase(shift);
     }
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
@@ -183,6 +196,7 @@ export class WalkScene extends Phaser.Scene {
     this.actor.setScale(PLAYER.scale * this.facing, PLAYER.scale);
     const height = Math.max(0, WORLD.ground - this.body.bottom);
     this.shadow.setX(this.body.center.x).setScale(1 - Math.min(height / 500, 0.4)).setAlpha(1 - Math.min(height / 250, 0.6));
+    this.shadow.setVisible(this.body.bottom <= WORLD.ground && this.ground.hasFloorAt(this.body.center.x));
     for (const { layout, image } of this.parts) {
       let dx = 0, dy = 0, rotation = 0;
       if (layout.id.includes("foot")) {

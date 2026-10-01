@@ -5,6 +5,7 @@ import { STAGES } from "../src/stages.ts";
 import { advanceTile } from "../src/scrolling.ts";
 import { verifyObstacles } from "./obstacles.browser.js";
 import { verifyStageMap } from "./stageMap.browser.js";
+import { verifyGround } from "./ground.browser.js";
 
 const game = new Phaser.Game({
   type: new URLSearchParams(location.search).has("canvas") ? Phaser.CANVAS : Phaser.WEBGL,
@@ -27,10 +28,23 @@ const ready = () => {
     run.disabled = false;
     document.querySelector("#sample-right").disabled = false;
     document.querySelector("#sample-left").disabled = false;
+    document.querySelector("#sample-hole").disabled = false;
     output.textContent = "準備完了";
   }
 };
 game.events.on("poststep", ready);
+
+document.querySelector("#sample-hole").addEventListener("click", () => {
+  const scene = game.scene.getScene("walk");
+  const hole = scene.stageDefinition.holes?.[0];
+  if (!hole) return;
+  game.loop.stop();
+  scene.physics.resume();
+  document.querySelector("#reset").click();
+  scene.body.reset(hole.x - PLAYER.width / 2 - 20, WORLD.ground - PLAYER.height / 2);
+  step(); render();
+  game.loop.start(game.step.bind(game));
+});
 
 for (const [id, code] of [["sample-right", "ArrowRight"], ["sample-left", "ArrowLeft"]]) {
   document.getElementById(id).addEventListener("click", () => {
@@ -62,7 +76,7 @@ run.addEventListener("click", async () => {
     step();
   };
   try {
-    await restart({ ...STAGES.teaRiver, obstacles: [], decorations: [] });
+    await restart({ ...STAGES.teaRiver, obstacles: [], decorations: [], holes: [] });
     document.querySelector("#reset").click();
     step();
     const frames = count => { for (let i = 0; i < count; i++) step(); };
@@ -195,6 +209,7 @@ run.addEventListener("click", async () => {
 
     await verifyObstacles({ scene, game, key, step, restart, pass, assert, near });
     await verifyStageMap({ scene, key, step, restart, pass, assert, near });
+    await verifyGround({ scene, key, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);

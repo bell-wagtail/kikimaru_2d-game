@@ -46,7 +46,7 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
   await restart(collisionStage);
   const count = scene.children.length;
   const staticCount = scene.physics.world.staticBodies.size;
-  near(staticCount, collisionStage.obstacles.length, "固定ボディ数");
+  near(staticCount, collisionStage.obstacles.length + 1, "岩と床の固定ボディ数");
   aligned();
   const rock = collisionStage.obstacles[1];
   for (const sign of [-1, 1]) for (const runUp of speeds) {
@@ -170,7 +170,7 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
   await restart(collisionStage);
   reset(); aligned();
   assert(scene.children.length === count && scene.physics.world.staticBodies.size === staticCount, "再起動で岩やボディが重複");
-  near(scene.physics.world.colliders.getActive().length, 1, "再起動でColliderが重複");
+  near(scene.physics.world.colliders.getActive().length, 2, "再起動でColliderが重複");
   launch(1, PLAYER.accelerationSeconds, rock.x - PLAYER.width / 2 - crossDistance(PLAYER.accelerationSeconds));
   frames(12); reset(); aligned();
   near(scene.body.velocity.x, 0, "空中リセットの速度");
