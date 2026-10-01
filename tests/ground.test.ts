@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canLandOnGround, groundSegments, validateGroundHoles } from "../src/ground.ts";
+import { canLandOnGround, groundSegments, mergeGroundHoles, validateGroundHoles } from "../src/ground.ts";
+
+test("overlapping and adjacent holes share one opening and never draw an internal bank without a wall", () => {
+  const holes = [{ id: "b", x: 120, width: 100 }, { id: "a", x: 0, width: 180 }, { id: "c", x: 220, width: 60 }, { id: "d", x: 400, width: 50 }];
+  assert.deepEqual(mergeGroundHoles(holes), [{ id: "a", x: 0, width: 280 }, { id: "d", x: 400, width: 50 }]);
+  assert.equal(holes[1].width, 180);
+  assert.equal(holes[0].id, "b");
+});
 
 test("floor segments subtract holes, clip the window, and merge overlapping or adjacent openings", () => {
   const holes = [

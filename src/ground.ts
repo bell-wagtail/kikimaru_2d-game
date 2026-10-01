@@ -6,6 +6,17 @@ export interface GroundHole {
 
 export interface GroundSegment { readonly left: number; readonly right: number }
 
+export function mergeGroundHoles(holes: readonly GroundHole[]): GroundHole[] {
+  const merged: GroundHole[] = [];
+  for (const hole of [...holes].sort((a, b) => a.x - b.x)) {
+    const previous = merged.at(-1);
+    if (previous && hole.x <= previous.x + previous.width) {
+      merged[merged.length - 1] = { ...previous, width: Math.max(previous.x + previous.width, hole.x + hole.width) - previous.x };
+    } else merged.push({ ...hole });
+  }
+  return merged;
+}
+
 export function validateGroundHoles(holes: readonly GroundHole[]): void {
   const ids = new Set<string>();
   for (const hole of holes) {

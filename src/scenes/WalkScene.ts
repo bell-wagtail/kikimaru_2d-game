@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
+import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset, pitAsset } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
@@ -61,6 +61,10 @@ export class WalkScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError));
     const background = backgroundAsset(this.stageDefinition);
     this.load.image(background.key, background.url);
+    if (this.stageDefinition.holes?.length) {
+      const pit = pitAsset();
+      this.load.image(pit.key, pit.url);
+    }
     const obstacles = this.stageDefinition.obstacles ?? [];
     validateObstacles(obstacles);
     for (const kind of new Set(obstacles.map(obstacle => obstacle.kind))) {
@@ -103,8 +107,12 @@ export class WalkScene extends Phaser.Scene {
     this.body.setCollideWorldBounds(true).setBounce(0);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height, false, false, true, false);
     this.physics.add.collider(hitbox, this.obstacles.group);
-    this.physics.add.collider(hitbox, this.ground.group, undefined, () =>
-      canLandOnGround(this.body.prev.y + this.body.height, this.body.velocity.y, WORLD.ground));
+    this.physics.add.collider(hitbox, this.ground.group, undefined, (_player, floor) => {
+      const floorBody = (floor as Phaser.Types.Physics.Arcade.GameObjectWithBody).body;
+      // A player already below the bank can hit its wall, but cannot be lifted onto its surface.
+      floorBody.checkCollision.up = canLandOnGround(this.body.prev.y + this.body.height, this.body.velocity.y, WORLD.ground);
+      return true;
+    });
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
     const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
@@ -175,8 +183,9 @@ export class WalkScene extends Phaser.Scene {
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const dt = Math.min(delta / 1000, 0.05);
     const contacts = this.obstacles.contacts(this.body);
-    this.body.blocked.left ||= contacts.left;
-    this.body.blocked.right ||= contacts.right;
+    const groundContacts = this.ground.contacts(this.body);
+    this.body.blocked.left ||= contacts.left || groundContacts.left;
+    this.body.blocked.right ||= contacts.right || groundContacts.right;
     const movement = applyMovement(this.body, this.controls, this.movementState, dt);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
