@@ -62,3 +62,13 @@ Preserve the original image's countryside composition, river, bridge, houses, te
 ```
 
 確認画像は PowerShell / System.Drawing で採用PNGを無加工・等倍で3枚並べ、連結境界の左右各384pxを切り出して作成。反転・補間・フェードによる継ぎ目の隠蔽は行っていません。採用PNG自体への後処理はありません。
+
+## 地面の穴（2026-10-01）
+
+組み込みの画像生成ツール（imagegen）で新規生成し、[assets/terrain/pit.png](assets/terrain/pit.png) へ保存しました。参照画像を編集する形式ではなく、ゲーム画面を確認して色・構図を指定しています。上部のアルファ透過と実寸を確認しました。制作時はPNGを無加工で保存し、manifestの指定位置から左右の縁と中央のフレームを取り、中央部分だけを穴の幅に合わせて描画していました。現在の採用状況・描画方式は [素材README](README.md#穴用素材) を参照してください。
+
+使用したプロンプト全文（`transparent_background: true`）：
+
+```text
+Use case: stylized-concept. Asset type: production PNG terrain sprite for a friendly 2D horizontal scrolling platform game. Create ONE dedicated grass-and-earth pit opening sprite, 1536 x 1024 landscape. It is a FRONT ORTHOGRAPHIC CROSS-SECTION of an open hole cut through a pale sandy beige ground, with a soft olive green grass fringe along ONLY the left and right banks at the very top. The left bank and right bank are vertical earthen walls dropping out of the bottom of the frame. Each bank occupies roughly the outermost 20 percent of the width; the middle 60 percent is the dark open shaft. Show a readable ragged cut edge, small embedded rounded pebbles, fine hanging roots and soil layers in warm ochre/tan/brown, with soft hand-painted shading and neat dark contour lines, matching a cute illustrated countryside game with violet rock props, blue sky and green tea fields. The outer sides of the banks blend into light beige #e8d9b8 soil. Depth grows darker downwards; the cavity is dark brown charcoal rather than a featureless flat black rectangle. No visible bottom, NO bottom ledge, NO bridge or grass across the opening, NO top-down ellipse, NO perspective landscape. Keep the horizontal middle simple so the sprite can be stretched horizontally in the game while the side bank slices retain their widths. The top surface baseline is around y=64 pixels, with a few grass tufts above it; make the strip above the banks genuinely transparent. The open middle below that surface is opaque dark depth, and it reaches the bottom edge. No padding around the sides or bottom: bank cross-sections touch those canvas edges. No text, labels, characters, UI, sky, scenery, border, shadows cast outside the sprite, watermarks, checkerboard background or multiple asset panels. This image is the final game terrain asset, not a concept scene.
+```

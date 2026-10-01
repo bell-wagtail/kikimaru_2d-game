@@ -9,6 +9,7 @@
 | 現在の到達点・確認状況・未実装の構想 | [STATUS](docs/STATUS.md) |
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
+| 文字マップで岩・穴・仮表示の配置を編集する | [STAGES](docs/STAGES.md) |
 | 変更後に検証する | [CHECKS](docs/CHECKS.md) |
 | 素材の仕様・組み込み上の制約 | [素材README](src/kikimaru-assets/README.md) |
 | Agentの作業ルール | [共通指示](.github/copilot-instructions.md)（Codexの入口は [AGENTS.md](AGENTS.md)） |
@@ -27,12 +28,19 @@
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
-| ステージごとの背景・スクロール倍率・継ぎ目補正 | [stages.ts](src/stages.ts) |
+| ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) |
+| 文字マップによる岩・穴・仮表示の配置 | [stage-maps/](src/stage-maps/) |
+| 文字マップの記号・座標への変換 | [stageMap.ts](src/stageMap.ts) |
 | 反復位置・長距離移動時の座標補正 | [scrolling.ts](src/scrolling.ts) |
+| 固定障害物の表示・物理ボディ・座標補正 | [FixedObstacles.ts](src/FixedObstacles.ts) |
+| 穴の表示・床の物理ボディ・座標補正・落下判定の基準 | [StageGround.ts](src/StageGround.ts) |
+| 地面と穴に共通の色・草の帯・土の模様・描画用テクスチャ | [groundTextures.ts](src/groundTextures.ts) |
+| 穴の定義と床区間・着地条件の計算 | [ground.ts](src/ground.ts) |
 
 ## フォルダの役割
 
 - `src/`：現行ゲーム。入口は `index.html` → `main.ts`。`scenes/` はPhaserのシーン。
+- `src/stage-maps/`：ステージごとの文字マップ。
 - `src/kikimaru-assets/`：現行コードが参照する素材と仕様。
 - `tests/`：入力・移動ロジックのテスト。
 - `docs/`：上記の目的別文書。

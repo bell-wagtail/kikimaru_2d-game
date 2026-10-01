@@ -51,7 +51,7 @@ test("elapsed time gives the same acceleration at 30, 60 and 144 updates per sec
   }
 });
 
-for (const runUp of [0, 1, PLAYER.accelerationSeconds]) test(`jump after ${runUp} seconds keeps its exact launch speed until landing`, () => {
+for (const runUp of [0, PLAYER.accelerationSeconds / 2, PLAYER.accelerationSeconds]) test(`jump after ${runUp} seconds keeps its exact launch speed until landing`, () => {
   for (const direction of [-1, 1]) {
     const { input, body, motion, step, advance } = setup(direction);
     if (runUp) { input.press("shift", "dash"); advance(runUp); }
@@ -73,10 +73,10 @@ for (const runUp of [0, 1, PLAYER.accelerationSeconds]) test(`jump after ${runUp
 test("a jump during deceleration keeps the remaining speed rather than dropping to walking speed", () => {
   const { input, body, step, advance } = setup();
   input.press("shift", "dash"); advance(PLAYER.accelerationSeconds);
-  input.release("shift"); advance(1);
+  input.release("shift"); advance(PLAYER.decelerationSeconds / 2);
   input.press("jump", "jump"); step(0);
   body.blocked.down = false; advance(1);
-  near(body.vx, maxSpeed - gain); assert.equal(body.vy, -PLAYER.jumpSpeed);
+  near(body.vx, (maxSpeed + PLAYER.speed) / 2); assert.equal(body.vy, -PLAYER.jumpSpeed);
 });
 
 test("stale ground flags cannot change launch speed or allow a second jump", () => {
