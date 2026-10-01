@@ -5,6 +5,13 @@ import { REBASE_DISTANCE } from "../src/scrolling.ts";
 export async function verifyObstacles({ scene, key, step, restart, pass, assert, near }) {
   const frames = count => { for (let i = 0; i < count; i++) step(); };
   const maxSpeed = PLAYER.speed * PLAYER.dashMultiplier;
+  const collisionStage = {
+    id: "collision-test", background: STAGES.teaRiver.background,
+    obstacles: [
+      { id: "left-rock", kind: "rock", x: 120, y: WORLD.ground - 36, width: 60, height: 36 },
+      { id: "right-rock", kind: "rock", x: 1020, y: WORLD.ground - 36, width: 60, height: 36 }
+    ], decorations: []
+  };
   const gain = (maxSpeed - PLAYER.speed) / PLAYER.accelerationSeconds;
   const speeds = [0, PLAYER.accelerationSeconds / 2, PLAYER.accelerationSeconds];
   const reset = () => { document.querySelector("#reset").click(); step(); };
@@ -36,12 +43,12 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
       assert(scene.physics.world.staticTree.search({ minX: body.left, minY: body.top, maxX: body.right, maxY: body.bottom }).includes(body), "衝突検索の位置が古い");
     }
   };
-  await restart(STAGES.teaRiver);
+  await restart(collisionStage);
   const count = scene.children.length;
   const staticCount = scene.physics.world.staticBodies.size;
-  near(staticCount, STAGES.teaRiver.obstacles.length, "固定ボディ数");
+  near(staticCount, collisionStage.obstacles.length, "固定ボディ数");
   aligned();
-  const rock = STAGES.teaRiver.obstacles[1];
+  const rock = collisionStage.obstacles[1];
   for (const sign of [-1, 1]) for (const runUp of speeds) {
     const code = sign > 0 ? "ArrowRight" : "ArrowLeft";
     const label = runUp === 0 ? "徒歩" : runUp === PLAYER.accelerationSeconds ? "最高速度" : "加速途中";
@@ -124,7 +131,7 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
   for (const sign of [-1, 1]) {
     const center = WORLD.width / 2 + sign * REBASE_DISTANCE;
     const edgeRock = { id: "rebase-rock", kind: "rock", x: center - 30, y: WORLD.ground - 36, width: 60, height: 36 };
-    await restart({ ...STAGES.teaRiver, obstacles: [edgeRock, { ...edgeRock, id: "distant-rock", x: -sign * 40000, width: 96, height: 72, y: WORLD.ground - 72 }] });
+    await restart({ ...collisionStage, obstacles: [edgeRock, { ...edgeRock, id: "distant-rock", x: -sign * 40000, width: 96, height: 72, y: WORLD.ground - 72 }] });
     const code = sign > 0 ? "ArrowRight" : "ArrowLeft";
     const wall = sign > 0 ? edgeRock.x - PLAYER.width / 2 : edgeRock.x + edgeRock.width + PLAYER.width / 2;
     launch(sign, PLAYER.accelerationSeconds, wall - sign * crossDistance(PLAYER.accelerationSeconds));
@@ -160,7 +167,7 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
     pass(`${sign > 0 ? "右" : "左"}方向：空中の座標補正→岩上着地、補正後の側面衝突、複数補正・再訪・リセット`);
   }
 
-  await restart(STAGES.teaRiver);
+  await restart(collisionStage);
   reset(); aligned();
   assert(scene.children.length === count && scene.physics.world.staticBodies.size === staticCount, "再起動で岩やボディが重複");
   near(scene.physics.world.colliders.getActive().length, 1, "再起動でColliderが重複");

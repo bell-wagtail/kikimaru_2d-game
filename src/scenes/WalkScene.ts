@@ -2,12 +2,14 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
+import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
 import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
+import { StageDecorations } from "../StageDecorations";
+import { validateDecorations } from "../decorations";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -28,6 +30,7 @@ export class WalkScene extends Phaser.Scene {
   private stageDefinition: StageDefinition = DEFAULT_STAGE;
   private scenery!: RepeatingScenery;
   private obstacles!: FixedObstacles;
+  private decorations!: StageDecorations;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
 
@@ -61,6 +64,12 @@ export class WalkScene extends Phaser.Scene {
       const asset = obstacleAsset(kind);
       this.load.image(asset.key, asset.url);
     }
+    const decorations = this.stageDefinition.decorations ?? [];
+    validateDecorations(decorations);
+    for (const kind of new Set(decorations.map(decoration => decoration.kind))) {
+      const asset = decorationAsset(kind);
+      this.load.image(asset.key, asset.url);
+    }
     for (const part of new Set(rig.views.right.map(item => item.part))) {
       this.load.image(part, partUrls[`../kikimaru-assets/assets/character/right/${part}.png`]);
     }
@@ -70,6 +79,7 @@ export class WalkScene extends Phaser.Scene {
     if (this.loadFailed) return;
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
+    this.decorations = new StageDecorations(this, this.stageDefinition.decorations ?? []);
     this.cameras.main.setScroll(0, 0);
 
     this.makeApron();
@@ -127,6 +137,7 @@ export class WalkScene extends Phaser.Scene {
     this.controls.clear();
     this.movementState.reset();
     this.obstacles.reset();
+    this.decorations.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
     this.facing = 1;
@@ -145,6 +156,7 @@ export class WalkScene extends Phaser.Scene {
     if (shift) {
       rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
       this.obstacles.rebase(shift);
+      this.decorations.rebase(shift);
     }
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);

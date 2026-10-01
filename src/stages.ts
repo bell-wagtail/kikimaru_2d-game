@@ -1,6 +1,10 @@
 import manifest from "./kikimaru-assets/manifest.json";
 import { WORLD } from "./movement";
 import type { ObstacleDefinition, ObstacleKind } from "./obstacles";
+import { parseStageMap } from "./stageMap";
+import type { StageMapGrid } from "./stageMap";
+import type { DecorationDefinition } from "./decorations";
+import teaRiverMap from "./stage-maps/tea-river.txt?raw";
 
 export interface StageDefinition {
   readonly id: string;
@@ -10,7 +14,12 @@ export interface StageDefinition {
     readonly seamBlendPixels: number;
   };
   readonly obstacles?: readonly ObstacleDefinition[];
+  readonly decorations?: readonly DecorationDefinition[];
 }
+
+export const STAGE_MAP_GRID = {
+  cellWidth: 60, cellHeight: 36, originX: 0, groundY: WORLD.ground
+} as const satisfies StageMapGrid;
 
 export const STAGES = {
   teaRiver: {
@@ -20,10 +29,7 @@ export const STAGES = {
       scrollFactor: 0.35,
       seamBlendPixels: 48
     },
-    obstacles: [
-      { id: "left-rock", kind: "rock", x: 120, y: WORLD.ground - 36, width: 60, height: 36 },
-      { id: "right-rock", kind: "rock", x: 1020, y: WORLD.ground - 36, width: 60, height: 36 }
-    ]
+    ...parseStageMap(teaRiverMap, STAGE_MAP_GRID)
   }
 } as const satisfies Record<string, StageDefinition>;
 
@@ -34,9 +40,18 @@ const backgroundUrls = import.meta.glob<string>("./kikimaru-assets/assets/backgr
 });
 
 const obstacleTypes: Record<ObstacleKind, string> = { rock: "props/rock" };
-const propUrls = import.meta.glob<string>("./kikimaru-assets/assets/props/rock.png", {
+const propUrls = import.meta.glob<string>([
+  "./kikimaru-assets/assets/props/rock.png", "./kikimaru-assets/assets/props/tea.png"
+], {
   eager: true, query: "?url", import: "default"
 });
+
+export function decorationAsset(kind: DecorationDefinition["kind"]): { key: string; url: string } {
+  const asset = manifest.files.find(file => file.key === `props/${kind}`);
+  const url = asset && propUrls[`./kikimaru-assets/${asset.path}`];
+  if (!asset || !url) throw new Error(`仮表示素材をmanifestに登録してください: ${kind}`);
+  return { key: asset.key, url };
+}
 
 export function obstacleAsset(kind: ObstacleKind): { key: string; url: string } {
   const asset = manifest.files.find(file => file.key === obstacleTypes[kind]);
