@@ -16,10 +16,10 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
       near(body.top, definition.y, "マップ岩の高さ");
       assert(scene.physics.world.staticTree.search({ minX: body.left, minY: body.top, maxX: body.right, maxY: body.bottom }).includes(body), "マップ岩の衝突検索");
     }
-    for (const { definition, image } of scene.decorations.items) {
-      near(image.x, definition.x + definition.width / 2 - scene.decorations.originX, "teaの表示座標");
+    for (const { definition, image } of scene.items.items) {
+      near(image.x, definition.x + definition.width / 2 - scene.items.originX, "teaの表示座標");
       near(image.y, definition.y + definition.height, "teaの高さ");
-      assert(!image.body, "tea仮表示に衝突ボディがないこと");
+      assert(!image.body, "teaアイテムに衝突ボディがないこと");
     }
   };
   await restart(stairStage);
@@ -30,7 +30,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
   const middle = rocks.find(rock => rock.id === "rock-r3-c19");
   const upper = rocks.filter(rock => rock.id.startsWith("rock-r2-")).sort((a, b) => a.x - b.x);
   assert(lower && middle && upper.length === 5, "階段と5個の岩をマップから生成");
-  assert(scene.physics.world.staticBodies.size === rocks.length + 1 && scene.decorations.items.length === 1, "マップの配置数と床ボディ");
+  assert(scene.physics.world.staticBodies.size === rocks.length + 1 && scene.items.items.length === 1, "マップの配置数と床ボディ");
 
   key("ArrowRight", true);
   for (let i = 0; i < 300 && !scene.body.blocked.right; i++) step();
@@ -69,9 +69,9 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
     key(code, false); step();
     assert(reached, "上段の端まで移動");
   }
-  assert(scene.decorations.items.length === 1, "teaを通過しても仮表示を維持");
-  near(scene.physics.world.colliders.getActive().length, 2, "岩・床のみ衝突し、仮表示には取得・衝突処理を追加しない");
-  pass("横5個の岩上を左右に歩いても継ぎ目で停止・落下しない、teaは衝突・取得効果のない仮表示");
+  assert(scene.items.items.length === 1 && scene.items.items[0].collected && !scene.items.items[0].image.visible, "teaを取得して表示が消える");
+  near(scene.physics.world.colliders.getActive().length, 2, "アイテムは岩・床の衝突処理を増やさない");
+  pass("横5個の岩上を左右に歩いても継ぎ目で停止・落下しない、teaの取得");
   reset(); aligned();
   near(scene.body.center.x, WORLD.width / 2, "高い段からのリセット位置");
   near(scene.body.bottom, WORLD.ground, "高い段からのリセット高さ");
@@ -84,7 +84,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
     scene.previousPlayerX = scene.body.center.x;
     step(); aligned();
     near(scene.obstacles.originX, sign * REBASE_DISTANCE, "マップ岩の補正量");
-    near(scene.decorations.originX, sign * REBASE_DISTANCE, "teaの補正量");
+    near(scene.items.originX, sign * REBASE_DISTANCE, "teaの補正量");
     const groundRock = scene.obstacles.items.find(item => item.definition.id === lower.id).body;
     scene.body.reset(groundRock.left - PLAYER.width / 2 - 20, WORLD.ground - PLAYER.height / 2);
     scene.previousPlayerX = scene.body.center.x;
@@ -93,7 +93,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
     near(scene.body.velocity.x, 0, "補正後のマップ岩で停止");
     reset(); aligned();
     near(scene.obstacles.originX, 0, "リセットでマップ岩の補正解除");
-    near(scene.decorations.originX, 0, "リセットでteaの補正解除");
+    near(scene.items.originX, 0, "リセットでteaの補正解除");
   }
   pass("文字マップの原点変更、左右の座標補正、補正後の岩衝突、岩とteaのリセット");
 

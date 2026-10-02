@@ -6,6 +6,10 @@ import { advanceTile } from "../src/scrolling.ts";
 import { verifyObstacles } from "./obstacles.browser.js";
 import { verifyStageMap } from "./stageMap.browser.js";
 import { verifyGround } from "./ground.browser.js";
+import { verifyItems } from "./items.browser.js";
+import { verifyItemFeedback } from "./feedback.browser.js";
+import { verifySpeedLines } from "./speedLines.browser.js";
+import { ITEM_TYPES } from "../src/items.ts";
 
 const game = new Phaser.Game({
   type: new URLSearchParams(location.search).has("canvas") ? Phaser.CANVAS : Phaser.WEBGL,
@@ -16,6 +20,7 @@ const game = new Phaser.Game({
 });
 const output = document.querySelector("#results");
 const run = document.querySelector("#run");
+const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview]")];
 let time = 0;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const near = (a, b, message) => assert(Math.abs(a-b) < 1e-6, `${message}: ${a} / ${b}`);
@@ -29,10 +34,64 @@ const ready = () => {
     document.querySelector("#sample-right").disabled = false;
     document.querySelector("#sample-left").disabled = false;
     document.querySelector("#sample-hole").disabled = false;
+    for (const button of previewButtons) button.disabled = false;
     output.textContent = "準備完了";
   }
 };
 game.events.on("poststep", ready);
+
+for (const button of previewButtons.filter(button => button.hasAttribute("data-feedback-preview"))) {
+  button.addEventListener("click", async () => {
+    run.disabled = true;
+    for (const preview of previewButtons) preview.disabled = true;
+    game.loop.stop();
+    const scene = game.scene.getScene("walk");
+    const kind = button.dataset.feedbackPreview;
+    const kinds = kind === "tea" || kind === "shrimp" ? [kind] : ["tea", "shrimp"];
+    const recreated = new Promise(resolve => scene.events.once("create", resolve));
+    scene.scene.restart({ stage: {
+      id: "feedback-preview", background: STAGES.teaRiver.background,
+      items: kinds.map(item => ({ id: item, kind: item, x: WORLD.width / 2 - 30, y: WORLD.ground - 36, width: 60, height: 36 }))
+    } });
+    game.loop.start(game.step.bind(game));
+    await recreated;
+    game.loop.stop();
+    scene.physics.resume();
+    step();
+    scene.update(0, 0);
+    if (kind === "ending") scene.update(0, Math.max(...kinds.map(item => ITEM_TYPES[item].durationSeconds)) * 1000);
+    render();
+    output.textContent = "演出プレビュー（時間停止）。結合テストを実行すると通常の検証へ戻ります。";
+    run.disabled = false;
+    for (const preview of previewButtons) preview.disabled = false;
+  });
+}
+
+for (const button of previewButtons.filter(button => button.hasAttribute("data-speed-preview"))) {
+  button.addEventListener("click", async () => {
+    run.disabled = true;
+    for (const preview of previewButtons) preview.disabled = true;
+    game.loop.stop();
+    const scene = game.scene.getScene("walk");
+    const variant = button.dataset.speedPreview;
+    const recreated = new Promise(resolve => scene.events.once("create", resolve));
+    scene.scene.restart({ stage: {
+      id: "speed-preview", background: STAGES.teaRiver.background,
+      items: variant === "both" ? ["tea", "shrimp"].map(kind => ({ id: kind, kind, x: WORLD.width / 2 - 30, y: WORLD.ground - 36, width: 60, height: 36 })) : []
+    } });
+    game.loop.start(game.step.bind(game));
+    await recreated;
+    game.loop.stop(); scene.physics.resume(); step();
+    key("ArrowRight", true); key("ShiftLeft", true);
+    const seconds = PLAYER.accelerationSeconds * (variant === "half" ? 0.5 : 1);
+    for (let i = 0; i < Math.ceil(seconds * 60); i++) step();
+    key("ArrowRight", false); key("ShiftLeft", false);
+    render();
+    output.textContent = "スピード線プレビュー（時間停止）。結合テストを実行すると通常の検証へ戻ります。";
+    run.disabled = false;
+    for (const preview of previewButtons) preview.disabled = false;
+  });
+}
 
 document.querySelector("#sample-hole").addEventListener("click", () => {
   const scene = game.scene.getScene("walk");
@@ -61,6 +120,7 @@ for (const [id, code] of [["sample-right", "ArrowRight"], ["sample-left", "Arrow
 
 run.addEventListener("click", async () => {
   run.disabled = true;
+  for (const button of previewButtons) button.disabled = true;
   game.loop.stop();
   const scene = game.scene.getScene("walk");
   scene.physics.resume();
@@ -76,7 +136,7 @@ run.addEventListener("click", async () => {
     step();
   };
   try {
-    await restart({ ...STAGES.teaRiver, obstacles: [], decorations: [], holes: [] });
+    await restart({ ...STAGES.teaRiver, obstacles: [], items: [], decorations: [], holes: [] });
     document.querySelector("#reset").click();
     step();
     const frames = count => { for (let i = 0; i < count; i++) step(); };
@@ -210,6 +270,9 @@ run.addEventListener("click", async () => {
     await verifyObstacles({ scene, game, key, step, restart, pass, assert, near });
     await verifyStageMap({ scene, key, step, restart, pass, assert, near });
     await verifyGround({ scene, key, step, restart, pass, assert, near });
+    await verifyItems({ scene, game, key, step, restart, pass, assert, near });
+    await verifyItemFeedback({ scene, game, key, step, restart, pass, assert, near });
+    await verifySpeedLines({ scene, game, key, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);
@@ -220,6 +283,7 @@ run.addEventListener("click", async () => {
     key("ArrowLeft",false); key("ArrowRight",false); key("Space",false);
     key("ShiftLeft",false); key("ShiftRight",false);
     run.disabled = false;
+    for (const button of previewButtons) button.disabled = false;
     game.loop.start(game.step.bind(game));
   }
 });

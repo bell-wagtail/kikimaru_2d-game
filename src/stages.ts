@@ -4,6 +4,8 @@ import type { ObstacleDefinition, ObstacleKind } from "./obstacles";
 import { parseStageMap } from "./stageMap";
 import type { StageMapGrid } from "./stageMap";
 import type { DecorationDefinition } from "./decorations";
+import { ITEM_TYPES } from "./items";
+import type { ItemDefinition, ItemKind } from "./items";
 import type { GroundHole } from "./ground";
 import teaRiverMap from "./stage-maps/tea-river.txt?raw";
 
@@ -15,6 +17,7 @@ export interface StageDefinition {
     readonly seamBlendPixels: number;
   };
   readonly obstacles?: readonly ObstacleDefinition[];
+  readonly items?: readonly ItemDefinition[];
   readonly decorations?: readonly DecorationDefinition[];
   readonly holes?: readonly GroundHole[];
 }
@@ -43,17 +46,23 @@ const backgroundUrls = import.meta.glob<string>("./kikimaru-assets/assets/backgr
 
 const obstacleTypes: Record<ObstacleKind, string> = { rock: "props/rock" };
 const propUrls = import.meta.glob<string>([
-  "./kikimaru-assets/assets/props/rock.png", "./kikimaru-assets/assets/props/tea.png"
+  "./kikimaru-assets/assets/props/*.png"
 ], {
   eager: true, query: "?url", import: "default"
 });
 
-export function decorationAsset(kind: DecorationDefinition["kind"]): { key: string; url: string } {
-  const asset = manifest.files.find(file => file.key === `props/${kind}`);
+export function stageItems(stage: StageDefinition): readonly ItemDefinition[] {
+  return [...(stage.items ?? []), ...(stage.decorations ?? [])];
+}
+
+export function itemAsset(kind: ItemKind): { key: string; url: string } {
+  const asset = manifest.files.find(file => file.key === ITEM_TYPES[kind].assetKey);
   const url = asset && propUrls[`./kikimaru-assets/${asset.path}`];
-  if (!asset || !url) throw new Error(`仮表示素材をmanifestに登録してください: ${kind}`);
+  if (!asset || !url) throw new Error(`アイテム素材をmanifestに登録してください: ${kind}`);
   return { key: asset.key, url };
 }
+
+export const decorationAsset = itemAsset;
 
 export function obstacleAsset(kind: ObstacleKind): { key: string; url: string } {
   const asset = manifest.files.find(file => file.key === obstacleTypes[kind]);

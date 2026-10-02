@@ -2,14 +2,17 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
+import { backgroundAsset, itemAsset, DEFAULT_STAGE, obstacleAsset, stageItems } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
 import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
-import { StageDecorations } from "../StageDecorations";
-import { validateDecorations } from "../decorations";
+import { StageItems } from "../StageItems";
+import { ITEM_TYPES, validateItems } from "../items";
+import { PowerUpState } from "../powerUps";
+import { ItemFeedback } from "../ItemFeedback";
+import { SpeedLines } from "../SpeedLines";
 import { GROUND, StageGround } from "../StageGround";
 import { canLandOnGround } from "../ground";
 
@@ -21,6 +24,7 @@ type RigPart = (typeof rig.views.right)[number];
 export class WalkScene extends Phaser.Scene {
   private controls = new InputState();
   private movementState = new MovementState();
+  private powerUps = new PowerUpState();
   private body!: Phaser.Physics.Arcade.Body;
   private actor!: Phaser.GameObjects.Container;
   private shadow!: Phaser.GameObjects.Ellipse;
@@ -32,7 +36,9 @@ export class WalkScene extends Phaser.Scene {
   private stageDefinition: StageDefinition = DEFAULT_STAGE;
   private scenery!: RepeatingScenery;
   private obstacles!: FixedObstacles;
-  private decorations!: StageDecorations;
+  private items!: StageItems;
+  private feedback!: ItemFeedback;
+  private speedLines!: SpeedLines;
   private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
@@ -49,6 +55,7 @@ export class WalkScene extends Phaser.Scene {
     this.previousPlayerX = WORLD.width / 2;
     this.controls.clear();
     this.movementState.reset();
+    this.powerUps.reset();
   }
 
   preload(): void {
@@ -67,10 +74,10 @@ export class WalkScene extends Phaser.Scene {
       const asset = obstacleAsset(kind);
       this.load.image(asset.key, asset.url);
     }
-    const decorations = this.stageDefinition.decorations ?? [];
-    validateDecorations(decorations);
-    for (const kind of new Set(decorations.map(decoration => decoration.kind))) {
-      const asset = decorationAsset(kind);
+    const items = stageItems(this.stageDefinition);
+    validateItems(items);
+    for (const kind of new Set(items.map(item => item.kind))) {
+      const asset = itemAsset(kind);
       this.load.image(asset.key, asset.url);
     }
     for (const part of new Set(rig.views.right.map(item => item.part))) {
@@ -83,8 +90,10 @@ export class WalkScene extends Phaser.Scene {
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
     this.ground = new StageGround(this, this.stageDefinition.holes ?? []);
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
-    this.decorations = new StageDecorations(this, this.stageDefinition.decorations ?? []);
+    this.items = new StageItems(this, stageItems(this.stageDefinition));
     this.cameras.main.setScroll(0, 0);
+    this.feedback = new ItemFeedback(this);
+    this.speedLines = new SpeedLines(this);
 
     this.makeApron();
     this.shadow = this.add.ellipse(WORLD.width / 2, WORLD.ground + 3, 94, 16, 0x58456a, 0.15);
@@ -111,7 +120,7 @@ export class WalkScene extends Phaser.Scene {
     });
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
-    const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
+    const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.speedLines.reset(); this.physics.pause(); };
     const resume = () => { this.controls.clear(); this.physics.resume(); };
     this.game.events.on(Phaser.Core.Events.BLUR, suspend);
     this.game.events.on(Phaser.Core.Events.FOCUS, resume);
@@ -146,8 +155,11 @@ export class WalkScene extends Phaser.Scene {
   private resetPlayer(): void {
     this.controls.clear();
     this.movementState.reset();
+    this.powerUps.reset();
+    this.feedback.reset();
+    this.speedLines.reset();
     this.obstacles.reset();
-    this.decorations.reset();
+    this.items.reset();
     this.ground.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
@@ -172,25 +184,34 @@ export class WalkScene extends Phaser.Scene {
     if (shift) {
       rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
       this.obstacles.rebase(shift);
-      this.decorations.rebase(shift);
+      this.items.rebase(shift);
       this.ground.rebase(shift);
     }
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const dt = Math.min(delta / 1000, 0.05);
+    const elapsed = Math.max(0, delta / 1000);
+    this.feedback.advance(elapsed);
+    const expired = this.powerUps.advance(elapsed);
+    const acquired = this.items.collect(this.body);
+    for (const kind of acquired) this.powerUps.acquire(kind);
+    this.feedback.notify(acquired, expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect)));
     const contacts = this.obstacles.contacts(this.body);
     const groundContacts = this.ground.contacts(this.body);
     this.body.blocked.left ||= contacts.left || groundContacts.left;
     this.body.blocked.right ||= contacts.right || groundContacts.right;
-    const movement = applyMovement(this.body, this.controls, this.movementState, dt);
+    const movement = applyMovement(this.body, this.controls, this.movementState, dt, this.powerUps);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
     this.animate(movement.walking, airborne, dt, movement.pace);
+    const anchor = { x: this.actor.x, bottom: this.actor.y, width: this.body.width, height: this.body.height };
+    this.feedback.update(anchor, this.powerUps, elapsed);
+    this.speedLines.update(anchor, this.body.velocity.x, elapsed);
     const directionLabel = this.facing === 1 ? "右へ" : "左へ";
-    const label = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
+    const motionLabel = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
       : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`
       : "ひとやすみ · Spaceでジャンプ";
-    if (this.status.textContent !== label) this.status.textContent = label;
+    if (this.status.textContent !== motionLabel) this.status.textContent = motionLabel;
   }
 
   private animate(walking: boolean, airborne: boolean, dt: number, pace = 1): void {

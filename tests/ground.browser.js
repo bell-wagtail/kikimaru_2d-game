@@ -45,7 +45,7 @@ export async function verifyGround({ scene, key, step, restart, pass, assert, ne
     near(scene.cameras.main.scrollX, 0, "リスポーンでカメラ復元");
     near(scene.scenery.background.tilePositionX, 0, "リスポーンで背景復元");
     near(scene.scenery.ground.tilePositionX, 0, "リスポーンで地面復元");
-    for (const object of [scene.ground, scene.obstacles, scene.decorations]) near(object.originX, 0, "リスポーンで座標補正解除");
+    for (const object of [scene.ground, scene.obstacles, scene.items]) near(object.originX, 0, "リスポーンで座標補正解除");
     frames(10); near(scene.body.center.x, WORLD.width / 2, "押下入力が残って勝手に移動しない");
     aligned();
   };
@@ -185,7 +185,7 @@ export async function verifyGround({ scene, key, step, restart, pass, assert, ne
       if (scene.ground.originX !== 0) {
         rebased = true;
         near(scene.ground.originX, sign * REBASE_DISTANCE, "穴と床の座標補正量");
-        near(scene.decorations.originX, scene.ground.originX, "穴と仮表示の補正量一致");
+        near(scene.items.originX, scene.ground.originX, "穴とアイテムの補正量一致");
       }
       if (rebased && scene.ground.originX === 0) { respawned = true; break; }
     }
