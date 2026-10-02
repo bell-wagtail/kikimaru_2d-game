@@ -10,8 +10,8 @@ import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
 import { StageItems } from "../StageItems";
 import { ITEM_TYPES, validateItems } from "../items";
-import type { ItemKind } from "../items";
 import { PowerUpState } from "../powerUps";
+import { ItemFeedback } from "../ItemFeedback";
 import { GROUND, StageGround } from "../StageGround";
 import { canLandOnGround } from "../ground";
 
@@ -36,6 +36,7 @@ export class WalkScene extends Phaser.Scene {
   private scenery!: RepeatingScenery;
   private obstacles!: FixedObstacles;
   private items!: StageItems;
+  private feedback!: ItemFeedback;
   private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
@@ -89,6 +90,7 @@ export class WalkScene extends Phaser.Scene {
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
     this.items = new StageItems(this, stageItems(this.stageDefinition));
     this.cameras.main.setScroll(0, 0);
+    this.feedback = new ItemFeedback(this);
 
     this.makeApron();
     this.shadow = this.add.ellipse(WORLD.width / 2, WORLD.ground + 3, 94, 16, 0x58456a, 0.15);
@@ -151,6 +153,7 @@ export class WalkScene extends Phaser.Scene {
     this.controls.clear();
     this.movementState.reset();
     this.powerUps.reset();
+    this.feedback.reset();
     this.obstacles.reset();
     this.items.reset();
     this.ground.reset();
@@ -183,8 +186,12 @@ export class WalkScene extends Phaser.Scene {
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const dt = Math.min(delta / 1000, 0.05);
-    this.powerUps.advance(delta / 1000);
-    for (const kind of this.items.collect(this.body)) this.powerUps.acquire(kind);
+    const elapsed = Math.max(0, delta / 1000);
+    this.feedback.advance(elapsed);
+    const expired = this.powerUps.advance(elapsed);
+    const acquired = this.items.collect(this.body);
+    for (const kind of acquired) this.powerUps.acquire(kind);
+    this.feedback.notify(acquired, expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect)));
     const contacts = this.obstacles.contacts(this.body);
     const groundContacts = this.ground.contacts(this.body);
     this.body.blocked.left ||= contacts.left || groundContacts.left;
@@ -193,17 +200,12 @@ export class WalkScene extends Phaser.Scene {
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
     this.animate(movement.walking, airborne, dt, movement.pace);
+    this.feedback.update({ x: this.actor.x, bottom: this.actor.y, width: this.body.width, height: this.body.height }, this.powerUps, elapsed);
     const directionLabel = this.facing === 1 ? "右へ" : "左へ";
     const motionLabel = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
       : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`
       : "ひとやすみ · Spaceでジャンプ";
-    const effects = (Object.keys(ITEM_TYPES) as ItemKind[]).flatMap(kind => {
-      const item = ITEM_TYPES[kind];
-      const seconds = this.powerUps.secondsLeft(item.effect);
-      return seconds > 0 ? [`${item.label} ${Math.ceil(seconds)}秒`] : [];
-    });
-    const label = [motionLabel, ...effects].join(" · ");
-    if (this.status.textContent !== label) this.status.textContent = label;
+    if (this.status.textContent !== motionLabel) this.status.textContent = motionLabel;
   }
 
   private animate(walking: boolean, airborne: boolean, dt: number, pace = 1): void {

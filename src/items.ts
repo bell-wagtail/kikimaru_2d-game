@@ -1,6 +1,8 @@
 export const ITEM_TYPES = {
-  tea: { assetKey: "props/tea", symbol: "o", effect: "autoDash", durationSeconds: 10, label: "お茶: 自動ダッシュ" },
-  shrimp: { assetKey: "props/shrimp", symbol: "j", effect: "doubleJump", durationSeconds: 10, label: "えび: 2段ジャンプ" }
+  tea: { assetKey: "props/tea", symbol: "o", effect: "autoDash", durationSeconds: 10,
+    name: "お茶", glow: { color: "#65c94c", diameterScale: 1.35 } },
+  shrimp: { assetKey: "props/shrimp", symbol: "j", effect: "doubleJump", durationSeconds: 10,
+    name: "えび", glow: { color: "#ed6b63", diameterScale: 1.75 } }
 } as const;
 
 export type ItemKind = keyof typeof ITEM_TYPES;

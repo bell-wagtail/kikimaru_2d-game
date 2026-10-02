@@ -31,9 +31,11 @@
 | ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) |
 | 文字マップによる岩・穴・アイテムの配置 | [stage-maps/](src/stage-maps/) |
 | 文字マップの記号・座標への変換 | [stageMap.ts](src/stageMap.ts) |
-| アイテムの種類・素材キー・文字マップ記号・効果・持続時間 | [items.ts](src/items.ts) の `ITEM_TYPES` |
+| アイテムの種類・素材キー・文字マップ記号・効果・持続時間・名前・発光色と大きさ | [items.ts](src/items.ts) の `ITEM_TYPES` |
 | プレイヤーの能力・残り時間 | [powerUps.ts](src/powerUps.ts) |
 | アイテムの表示・取得済み状態・取得判定・座標補正 | [StageItems.ts](src/StageItems.ts) |
+| 取得・終了通知の時間、終了前の明滅周期、発光の透明度・中心高さ | [feedback.ts](src/feedback.ts) の `ITEM_FEEDBACK` |
+| キャラクターに追従する円形発光・画面に固定する短い通知 | [ItemFeedback.ts](src/ItemFeedback.ts) |
 | 反復位置・長距離移動時の座標補正 | [scrolling.ts](src/scrolling.ts) |
 | 固定障害物の表示・物理ボディ・座標補正 | [FixedObstacles.ts](src/FixedObstacles.ts) |
 | 穴の表示・床の物理ボディ・座標補正・落下判定の基準 | [StageGround.ts](src/StageGround.ts) |

@@ -52,7 +52,7 @@ export async function verifyItems({ scene, game, key, step, restart, pass, asser
   near(scene.powerUps.secondsLeft("autoDash"), remaining - 1, "同じお茶の場所で毎フレーム効果を延長しない");
   assert(scene.children.length === count && scene.physics.world.staticBodies.size === staticCount, "取得で表示数・床や岩のボディ数は変わらない");
   collectBoth();
-  assert(document.querySelector("#state").textContent.includes("2段ジャンプ"), "有効能力を文字でも表示");
+  assert(scene.feedback.message.text.includes("えびを取得！") && scene.feedback.message.visible, "取得した種類を短い文字で表示");
   place(600); key("ArrowRight", true); frames(PLAYER.accelerationSeconds * 60);
   near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "Shiftなしで既存の最高速度へ加速");
   key("Space", true); scene.update(0, 0); key("Space", false); frames(12);

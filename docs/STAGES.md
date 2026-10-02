@@ -46,6 +46,8 @@
 
 ## アイテムの種類・効果を変更する
 
-対応の正本は [items.ts](../src/items.ts) の `ITEM_TYPES` です。`assetKey` はmanifestの素材キー、`symbol` は文字マップの記号、`effect` は能力、`durationSeconds` は効果時間、`label` は画面の能力表示です。持続時間はここから種類ごとに変更できます。素材パス・実寸はmanifestを正とします。
+対応の正本は [items.ts](../src/items.ts) の `ITEM_TYPES` です。`assetKey` はmanifestの素材キー、`symbol` は文字マップの記号、`effect` は能力、`durationSeconds` は効果時間、`name` は取得・終了通知に使う名前です。`glow.color` は発光色、`glow.diameterScale` はキャラクターの大きさに対する円形発光の直径倍率です。持続時間と演出はここから種類ごとに変更できます。素材パス・実寸はmanifestを正とします。
 
 既存能力を使う種類を追加する場合は、素材をmanifestへ登録し、`ITEM_TYPES` へ種類と重複しない記号を追加します。小物PNGは `assets/props/` から解決し、ステージで使う種類だけをPhaserへ読み込みます。新しい能力は [movement.ts](../src/movement.ts) に動作を追加します。取得済み状態と表示は `StageItems`、効果と残り時間は [powerUps.ts](../src/powerUps.ts) に分けています。効果の操作・解除条件は [RUN](RUN.md) を参照してください。
+
+取得・終了の文字表示時間、明滅を速める残り時間、通常時・終了直前の周期、発光の透明度と中心高さは [feedback.ts](../src/feedback.ts) の `ITEM_FEEDBACK` が正本です。発光は [ItemFeedback.ts](../src/ItemFeedback.ts) がキャラクターの表示位置と渡された幅・高さに合わせて配置します。キャラクター固有の画像や輪郭には依存せず、左右反転でも円を反転させません。
