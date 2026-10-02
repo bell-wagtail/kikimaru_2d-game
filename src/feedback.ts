@@ -3,15 +3,16 @@ import type { ItemKind } from "./items.ts";
 
 export const ITEM_FEEDBACK = {
   noticeSeconds: 2, warningSeconds: 3,
-  normalPulseSeconds: 1.6, urgentPulseSeconds: 0.45,
-  minAlpha: 0.3, maxAlpha: 0.7,
+  normalPulseSeconds: 1.6, warningPulseSeconds: 0.6, urgentPulseSeconds: 0.3,
+  minAlpha: 0.55, maxAlpha: 0.95,
   centerHeightRatio: 0.5, textureSize: 256,
   noticeY: 130, noticeFontSize: 34
 } as const;
 
 export function pulsePeriod(secondsLeft: number): number {
+  if (secondsLeft > ITEM_FEEDBACK.warningSeconds) return ITEM_FEEDBACK.normalPulseSeconds;
   const remaining = Math.max(0, Math.min(1, secondsLeft / ITEM_FEEDBACK.warningSeconds));
-  return ITEM_FEEDBACK.urgentPulseSeconds + (ITEM_FEEDBACK.normalPulseSeconds - ITEM_FEEDBACK.urgentPulseSeconds) * remaining;
+  return ITEM_FEEDBACK.urgentPulseSeconds + (ITEM_FEEDBACK.warningPulseSeconds - ITEM_FEEDBACK.urgentPulseSeconds) * remaining;
 }
 
 export class ItemNoticeState {

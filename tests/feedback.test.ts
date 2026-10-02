@@ -36,8 +36,10 @@ test("pause and reset leave no delayed acquisition or ending notices", () => {
   notices.reset(); notices.advance(ITEM_FEEDBACK.noticeSeconds * 2); assert.equal(notices.text, "");
 });
 
-test("the pulse stays calm initially and gradually shortens as the remaining time approaches zero", () => {
+test("the pulse clearly speeds up as the warning starts and gradually shortens toward expiry", () => {
   assert.equal(pulsePeriod(ITEM_FEEDBACK.warningSeconds * 2), ITEM_FEEDBACK.normalPulseSeconds);
+  assert.equal(pulsePeriod(ITEM_FEEDBACK.warningSeconds + 0.01), ITEM_FEEDBACK.normalPulseSeconds);
+  assert.ok(pulsePeriod(ITEM_FEEDBACK.warningSeconds) < ITEM_FEEDBACK.normalPulseSeconds / 2);
   const periods = [1, 0.75, 0.5, 0.25, 0].map(fraction => pulsePeriod(ITEM_FEEDBACK.warningSeconds * fraction));
   assert.ok(periods.every((period, index) => !index || period < periods[index - 1]));
   assert.equal(periods.at(-1), ITEM_FEEDBACK.urgentPulseSeconds);
