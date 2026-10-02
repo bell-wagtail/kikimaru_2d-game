@@ -4,6 +4,8 @@ import { STAGES, STAGE_MAP_GRID } from "../src/stages.ts";
 import { parseStageMap } from "../src/stageMap.ts";
 import { REBASE_DISTANCE } from "../src/scrolling.ts";
 import { SCORE_RULES } from "../src/score.ts";
+import { QUIZ_QUESTIONS } from "../src/quizData.ts";
+import { QuizState } from "../src/quiz.ts";
 import map from "./fixtures/score-quiz.txt?raw";
 
 export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, assert, near }) {
@@ -149,14 +151,45 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   assert(document.querySelectorAll("#quiz-dialog").length === 1, "未回答の再起動でもダイアログとイベントを重複させない");
   near(scene.children.length, children, "再起動でPhaser表示が重複しない");
   near(scene.physics.world.colliders.getActive().length, 2, "クイズ用Colliderを追加しない");
-  const overlap = { ...stage, items: [
-    { ...stage.items.find(item => item.kind === "quiz"), id: "first" },
-    { ...stage.items.find(item => item.kind === "quiz"), id: "second" }
-  ] };
-  await restart(overlap); collect("quiz");
-  assert(scene.items.items.filter(item => item.collected).length === 1, "重なるマーカーも1問ずつ消費");
-  answer(true); finish(); scene.update(0, 0);
-  assert(dialog().open && scene.items.items.every(item => item.collected), "2つ目のマーカーは次の問題として出題");
-  answer(false); finish(); score(70);
-  pass("マス寸法変更・未回答でのシーン再起動・ダイアログとイベントの重複防止・重なるマーカーの個別出題");
+  const overlap = { ...stage, items: Array.from({ length: QUIZ_QUESTIONS.length * 2 + 1 }, (_, index) => (
+    { ...stage.items.find(item => item.kind === "quiz"), id: `quiz-${index}` }
+  )) };
+  await restart(overlap);
+  scene.quiz = new QuizState(QUIZ_QUESTIONS, () => 0);
+  const cycleIds = new Set();
+  let previousId;
+  for (let index = 0; index < overlap.items.length; index++) {
+    collect("quiz");
+    assert(dialog().open && scene.items.items.filter(item => item.collected).length === index + 1, "重なるマーカーも1問ずつ消費");
+    if (index % QUIZ_QUESTIONS.length === 0) cycleIds.clear();
+    const id = scene.quiz.current.id;
+    assert(!cycleIds.has(id), "一巡の途中で同じ問題を繰り返さない");
+    if (QUIZ_QUESTIONS.length > 1) assert(id !== previousId, "一巡の境目でも同じ問題が連続しない");
+    cycleIds.add(id); previousId = id;
+    if (cycleIds.size === QUIZ_QUESTIONS.length) {
+      assert(QUIZ_QUESTIONS.every(question => cycleIds.has(question.id)), "全問を出題してから新しい一巡を始める");
+    }
+    answer(true); finish();
+  }
+  score(Math.min(SCORE_RULES.maximum, overlap.items.length * SCORE_RULES.quizCorrect));
+  pass("マス寸法変更・未回答での再起動・ダイアログ重複防止、問題数より多い重なるマーカーで2巡以上を重複なく出題");
+
+  const firstId = QUIZ_QUESTIONS[0].id;
+  const firstQuestion = () => {
+    collect("quiz");
+    assert(scene.quiz.current.id === firstId, "ステージのリセットで出題履歴も初期化");
+    answer(true); finish();
+  };
+  reset(); restored(); firstQuestion();
+  place(hole.x + hole.width / 2, WORLD.ground + 5);
+  respawned = false;
+  for (let index = 0; index < 150; index++) {
+    step();
+    if (scene.body.center.x === WORLD.width / 2) { respawned = true; break; }
+  }
+  assert(respawned, "出題履歴を持った状態から落下リスポーン");
+  restored(); firstQuestion();
+  await restart(overlap); restored(); firstQuestion();
+  await restart(stage); restored(); firstQuestion();
+  pass("手動リセット・落下リスポーン・再起動・別ステージ開始で出題履歴を初期化");
 }

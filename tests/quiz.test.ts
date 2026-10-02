@@ -4,11 +4,16 @@ import { QUIZ_QUESTIONS } from "../src/quizData.ts";
 import { drawQuiz, QuizState } from "../src/quiz.ts";
 import { SCORE_RULES } from "../src/score.ts";
 
-test("the three requested questions each have four distinct choices and a valid correct answer", () => {
-  assert.deepEqual(QUIZ_QUESTIONS.map(question => [question.prompt, question.choices[question.correctIndex]]), [
+test("registered questions have distinct IDs and choices, including the three requested local facts", () => {
+  const requested = [
     ["「やくなし」の語呂合わせで知られる、蓬莱橋の長さは？", "897.4m"],
     ["夢のつり橋がある渓谷は？", "寸又峡"], ["島田で3年に一度開かれる伝統のお祭りは？", "帯まつり（島田大祭）"]
-  ]);
+  ];
+  for (const [prompt, answer] of requested) {
+    const question = QUIZ_QUESTIONS.find(question => question.prompt === prompt)!;
+    assert.ok(question);
+    assert.equal(question.choices[question.correctIndex], answer);
+  }
   assert.equal(new Set(QUIZ_QUESTIONS.map(question => question.id)).size, QUIZ_QUESTIONS.length);
   for (const question of QUIZ_QUESTIONS) {
     assert.equal(new Set(question.choices).size, 4);
@@ -81,4 +86,88 @@ test("incorrect answers use the penalty and reset removes an active or answered 
   assert.ok(quiz.begin());
   quiz.reset();
   assert.equal(quiz.current, undefined);
+});
+
+test("each cycle uses every question once for single, current and expanded question sets", () => {
+  for (const count of [1, 2, QUIZ_QUESTIONS.length, 7, 20]) {
+    const questions = Array.from({ length: count }, (_, index) => ({ ...QUIZ_QUESTIONS[0], id: `question-${index}`,
+      prompt: `Question ${index}`, explanation: `Fact ${index}` }));
+    const before = JSON.stringify(questions);
+    let seed = 73;
+    const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+    const quiz = new QuizState(questions, random);
+    let previousId: string | undefined;
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const ids: string[] = [];
+      for (let index = 0; index < count; index++) {
+        const view = quiz.begin()!;
+        assert.equal(quiz.begin(), undefined);
+        assert.equal(quiz.finish(), false);
+        if (count > 1) assert.notEqual(view.id, previousId);
+        const question = questions.find(question => question.id === view.id)!;
+        assert.equal(view.prompt, question.prompt);
+        assert.equal(view.explanation, question.explanation);
+        assert.equal(view.choices[view.correctIndex], question.choices[question.correctIndex]);
+        ids.push(view.id);
+        previousId = view.id;
+        const correct = index % 2 === 0;
+        assert.equal(quiz.answer(correct ? view.correctIndex : (view.correctIndex + 1) % 4)!.correct, correct);
+        assert.equal(quiz.finish(), true);
+      }
+      assert.deepEqual(ids.sort(), questions.map(question => question.id).sort());
+    }
+    assert.equal(JSON.stringify(questions), before);
+  }
+});
+
+test("a three-question pool can produce all six orders in its first cycle", () => {
+  const questions = QUIZ_QUESTIONS.slice(0, 3);
+  const orders = new Set<string>();
+  for (let first = 0; first < 3; first++) for (let second = 0; second < 2; second++) {
+    const samples = [(first + 0.5) / 3, 0, 0, 0, (second + 0.5) / 2, 0, 0, 0, 0.5, 0, 0, 0];
+    const quiz = new QuizState(questions, () => samples.shift()!);
+    const ids = [];
+    for (let index = 0; index < questions.length; index++) {
+      const view = quiz.begin()!;
+      ids.push(view.id);
+      quiz.answer(view.correctIndex);
+      quiz.finish();
+    }
+    orders.add(JSON.stringify(ids));
+    assert.equal(samples.length, 0);
+  }
+  assert.equal(orders.size, 6);
+});
+
+test("stage reset clears question history for unanswered, answered and finished quizzes", () => {
+  for (const state of ["unanswered", "answered", "finished"]) {
+    const quiz = new QuizState(QUIZ_QUESTIONS, () => 0);
+    const first = quiz.begin()!;
+    quiz.answer(first.correctIndex);
+    quiz.finish();
+    const second = quiz.begin()!;
+    assert.notEqual(second.id, first.id);
+    if (state !== "unanswered") quiz.answer(second.correctIndex);
+    if (state === "finished") quiz.finish();
+    quiz.reset();
+    assert.equal(quiz.current, undefined);
+    assert.equal(quiz.result, undefined);
+    assert.equal(quiz.begin()!.id, first.id);
+  }
+});
+
+test("question history belongs to each stage state rather than a shared global pool", () => {
+  const firstStage = new QuizState(QUIZ_QUESTIONS, () => 0);
+  const secondStage = new QuizState(QUIZ_QUESTIONS, () => 0);
+  const first = firstStage.begin()!;
+  firstStage.answer(first.correctIndex);
+  firstStage.finish();
+  assert.notEqual(firstStage.begin()!.id, first.id);
+  assert.equal(secondStage.begin()!.id, first.id);
+});
+
+test("question pools reject empty data and duplicate IDs", () => {
+  assert.throws(() => new QuizState([]), /1問以上/);
+  assert.throws(() => new QuizState([QUIZ_QUESTIONS[0], QUIZ_QUESTIONS[0]]), /重複しないID/);
+  assert.throws(() => drawQuiz(() => 0, []), /1問以上/);
 });

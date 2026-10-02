@@ -52,6 +52,8 @@
 
 種類を追加する場合は、素材をmanifestへ登録し、`ITEM_TYPES` へ区分・素材・重複しない記号を追加します。能力なしの種類の配点は [score.ts](../src/score.ts) の `SCORE_RULES.items` へ追加します。能力付きアイテムの共通配点・クイズの正誤配点・スコアの初期値と上下限も同定義が正本です。クイズの問題文・4択・正解の元の添字・一文豆知識・出典URLは [quizData.ts](../src/quizData.ts) の `QUIZ_QUESTIONS` を編集します。`explanation` は回答後に表示する一文、`sourceUrl` は内容を確認するための公式情報のURLです。
 
+問題は1問以上登録し、各問題の `id` は重複しない値にします。出題処理は登録数に応じて一巡を管理するので、問題を増やしても出題側の件数変更は不要です。問題数より多い `Q` を置いた場合も、全問を使い切るごとに新しい一巡から出題できます。
+
 小物PNGは `assets/props/` から解決し、ステージで使う種類だけをPhaserへ読み込みます。新しい能力は [movement.ts](../src/movement.ts) に動作を追加します。取得済み状態と表示は `StageItems`、能力と残り時間は [powerUps.ts](../src/powerUps.ts)、出題・回答状態は [quiz.ts](../src/quiz.ts) に分けています。操作・停止・リセットの方針は [RUN](RUN.md) を参照してください。
 
 取得・終了の文字表示時間、明滅を速める残り時間、通常時・警告開始時・終了直前の周期、発光の不透明度と中心高さは [feedback.ts](../src/feedback.ts) の `ITEM_FEEDBACK` が正本です。発光は [ItemFeedback.ts](../src/ItemFeedback.ts) がキャラクターの表示位置と渡された幅・高さに合わせて配置します。キャラクター固有の画像や輪郭には依存せず、左右反転でも円を反転させません。

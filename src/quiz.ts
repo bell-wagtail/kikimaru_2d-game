@@ -1,4 +1,5 @@
 import { QUIZ_QUESTIONS } from "./quizData.ts";
+import type { QuizQuestion } from "./quizData.ts";
 import { SCORE_RULES } from "./score.ts";
 
 export interface QuizView {
@@ -16,8 +17,9 @@ export interface QuizResult {
   readonly explanation: string;
 }
 
-export function drawQuiz(random: () => number = Math.random): QuizView {
-  const question = QUIZ_QUESTIONS[Math.floor(random() * QUIZ_QUESTIONS.length)];
+export function drawQuiz(random: () => number = Math.random, questions: readonly QuizQuestion[] = QUIZ_QUESTIONS): QuizView {
+  if (!questions.length) throw new Error("クイズの問題を1問以上登録してください");
+  const question = questions[Math.floor(random() * questions.length)];
   const choices = question.choices.map((text, index) => ({ text, correct: index === question.correctIndex }));
   for (let index = choices.length - 1; index > 0; index--) {
     const other = Math.floor(random() * (index + 1));
@@ -30,10 +32,28 @@ export function drawQuiz(random: () => number = Math.random): QuizView {
 export class QuizState {
   current: QuizView | undefined;
   result: QuizResult | undefined;
+  private readonly questions: readonly QuizQuestion[];
+  private readonly random: () => number;
+  private remaining: readonly QuizQuestion[] = [];
+  private lastQuestionId: string | undefined;
+
+  constructor(questions: readonly QuizQuestion[] = QUIZ_QUESTIONS, random: () => number = Math.random) {
+    if (!questions.length || new Set(questions.map(question => question.id)).size !== questions.length) {
+      throw new Error("クイズは1問以上、重複しないIDで登録してください");
+    }
+    this.questions = [...questions];
+    this.random = random;
+  }
 
   begin(): QuizView | undefined {
     if (this.current) return undefined;
-    this.current = drawQuiz();
+    if (!this.remaining.length) this.remaining = this.questions;
+    const candidates = this.remaining.length === this.questions.length && this.questions.length > 1
+      ? this.remaining.filter(question => question.id !== this.lastQuestionId) : this.remaining;
+    const question = drawQuiz(this.random, candidates);
+    this.current = question;
+    this.remaining = this.remaining.filter(candidate => candidate.id !== question.id);
+    this.lastQuestionId = question.id;
     return this.current;
   }
 
@@ -47,9 +67,15 @@ export class QuizState {
 
   finish(): boolean {
     if (!this.result) return false;
-    this.reset();
+    this.current = undefined;
+    this.result = undefined;
     return true;
   }
 
-  reset(): void { this.current = undefined; this.result = undefined; }
+  reset(): void {
+    this.current = undefined;
+    this.result = undefined;
+    this.remaining = [];
+    this.lastQuestionId = undefined;
+  }
 }
