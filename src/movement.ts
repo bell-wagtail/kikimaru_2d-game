@@ -34,11 +34,14 @@ export function applyMovement(body: MotionBody, input: InputState, state: Moveme
     if (!moving) state.speed = PLAYER.speed;
     else {
       const maxSpeed = PLAYER.speed * PLAYER.dashMultiplier;
-      const accelerating = input.active("dash") || (powerUps?.active("autoDash") ?? false);
-      const target = accelerating ? maxSpeed : PLAYER.speed;
-      const seconds = accelerating ? PLAYER.accelerationSeconds : PLAYER.decelerationSeconds;
-      const change = (maxSpeed - PLAYER.speed) / seconds * Math.max(0, deltaSeconds);
-      state.speed = accelerating ? Math.min(target, state.speed + change) : Math.max(target, state.speed - change);
+      if (powerUps?.active("autoDash")) state.speed = maxSpeed;
+      else {
+        const accelerating = input.active("dash");
+        const target = accelerating ? maxSpeed : PLAYER.speed;
+        const seconds = accelerating ? PLAYER.accelerationSeconds : PLAYER.decelerationSeconds;
+        const change = (maxSpeed - PLAYER.speed) / seconds * Math.max(0, deltaSeconds);
+        state.speed = accelerating ? Math.min(target, state.speed + change) : Math.max(target, state.speed - change);
+      }
     }
   }
   body.setVelocityX(moving ? direction * state.speed : 0);

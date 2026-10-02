@@ -145,15 +145,23 @@ test("opposing directions cancel while independent bindings stay held", () => {
   input.release("ArrowRight"); input.release("KeyA"); step(); assert.equal(body.vx, -PLAYER.speed);
 });
 
-test("tea accelerates like Shift in both directions and cannot charge while stopped or blocked", () => {
-  for (const direction of [-1, 1]) {
+test("tea starts at maximum speed in both directions, resumes immediately and stays stopped at rest or walls", () => {
+  for (const direction of [-1, 1]) for (const fps of [30, 60, 144]) {
     const tea = setup(direction), shift = setup(direction);
+    tea.step(); near(tea.body.vx, direction * PLAYER.speed);
     tea.powers.acquire("tea"); shift.input.press("shift", "dash");
-    for (let i = 0; i < 180; i++) { tea.step(); shift.step(); near(tea.body.vx, shift.body.vx); }
-    tea.input.release("move"); tea.advance(1); near(tea.motion.speed, PLAYER.speed);
+    assert.equal(tea.step(0).dashing, true); near(tea.body.vx, direction * maxSpeed);
+    shift.step(1 / fps); near(shift.body.vx, direction * (PLAYER.speed + gain / fps));
+    tea.input.release("move"); tea.step(0); near(tea.body.vx, 0); near(tea.motion.speed, PLAYER.speed);
     tea.input.press("move", direction < 0 ? "left" : "right");
+    tea.step(0); near(tea.body.vx, direction * maxSpeed);
+    tea.input.press("opposite", direction < 0 ? "right" : "left");
+    tea.step(0); near(tea.body.vx, 0); near(tea.motion.speed, PLAYER.speed);
+    tea.input.release("opposite");
     tea.body.blocked[direction < 0 ? "left" : "right"] = true;
     tea.advance(1); near(tea.body.vx, 0); near(tea.motion.speed, PLAYER.speed);
+    tea.input.release("move"); tea.input.press("pointer:1", direction < 0 ? "right" : "left");
+    tea.step(0); near(tea.body.vx, -direction * maxSpeed);
   }
 });
 
@@ -161,7 +169,7 @@ test("airborne tea acquisition and expiration preserve speed until landing; Shif
   const { input, body, step, advance, powers } = setup();
   input.press("jump", "jump"); step(0); body.blocked.down = false;
   powers.acquire("tea"); advance(1); near(body.vx, PLAYER.speed);
-  body.blocked.down = true; body.vy = 0; advance(PLAYER.accelerationSeconds);
+  body.blocked.down = true; body.vy = 0; step(0);
   near(body.vx, maxSpeed);
   input.release("jump"); input.press("jump", "jump"); step(0); body.blocked.down = false;
   powers.advance(ITEM_TYPES.tea.durationSeconds); advance(1); near(body.vx, maxSpeed);

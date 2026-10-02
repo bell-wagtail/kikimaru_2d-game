@@ -61,7 +61,8 @@ export async function verifySpeedLines({ scene, game, key, step, restart, pass, 
   game.events.emit(Phaser.Core.Events.FOCUS); step(); assert(!graphic().visible, "復帰時に線を残さない");
   pass("ジャンプの速度維持・空中停止・左右方向転換・左右の座標補正・フォーカス喪失に追従");
 
-  reset(); scene.powerUps.acquire("tea"); key("ArrowRight", true); frames(PLAYER.accelerationSeconds * 60); aligned(1);
+  reset(); scene.powerUps.acquire("tea"); key("ArrowRight", true); step(); aligned(1);
+  near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "お茶は最初のフレームから最高速度の線を表示");
   await restart({ ...stage, obstacles: [{ id: "wall", kind: "rock", x: 950, y: WORLD.ground - 180, width: 60, height: 180 }] });
   key("ArrowRight", true); key("ShiftLeft", true); frames(120);
   assert(scene.body.blocked.right && !graphic().visible, "岩の壁で停止すると線も消える");

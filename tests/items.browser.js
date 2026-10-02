@@ -46,15 +46,15 @@ export async function verifyItems({ scene, game, key, step, restart, pass, asser
   key("ArrowRight", true);
   for (let i = 0; i < 100 && !tea.collected; i++) step();
   assert(tea.collected && !tea.image.visible && !shrimp.collected, "徒歩でお茶のみ取得");
-  assert(scene.body.velocity.x > PLAYER.speed, "Shiftなしで加速を開始");
+  near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "取得したフレームからShiftなしで最高速度");
   key("ArrowRight", false); step();
   const remaining = scene.powerUps.secondsLeft("autoDash"); frames(60);
   near(scene.powerUps.secondsLeft("autoDash"), remaining - 1, "同じお茶の場所で毎フレーム効果を延長しない");
   assert(scene.children.length === count && scene.physics.world.staticBodies.size === staticCount, "取得で表示数・床や岩のボディ数は変わらない");
   collectBoth();
   assert(scene.feedback.message.text.includes("えびを取得！") && scene.feedback.message.visible, "取得した種類を短い文字で表示");
-  place(600); key("ArrowRight", true); frames(PLAYER.accelerationSeconds * 60);
-  near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "Shiftなしで既存の最高速度へ加速");
+  place(600); key("ArrowRight", true); step();
+  near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "停止後の移動再開も最初のフレームから最高速度");
   key("Space", true); scene.update(0, 0); key("Space", false); frames(12);
   const launchSpeed = scene.body.velocity.x;
   key("Space", true); scene.update(0, 0);
@@ -66,7 +66,7 @@ export async function verifyItems({ scene, game, key, step, restart, pass, asser
   near(scene.body.velocity.y, thirdY, "3段目のジャンプを拒否");
   key("ArrowRight", false); frames(100);
   assert(scene.body.blocked.down && !scene.movementState.airJumpUsed, "着地で空中ジャンプを回復");
-  pass("文字マップの両素材の取得、表示消去、一度だけ反映、常時ダッシュ、併用、2段ジャンプと無限ジャンプ防止");
+  pass("文字マップの両素材の取得、表示消去、一度だけ反映、お茶は即最高速度・停止後の再開、併用、2段ジャンプと無限ジャンプ防止");
 
   reset(); collectBoth(); place(600);
   frames(Math.max(ITEM_TYPES.tea.durationSeconds, ITEM_TYPES.shrimp.durationSeconds) * 60);
@@ -141,8 +141,11 @@ export async function verifyItems({ scene, game, key, step, restart, pass, asser
   airPickup();
   key("Space", true); scene.update(0, 0); key("Space", false);
   near(scene.body.velocity.y, -PLAYER.jumpSpeed * PLAYER.airJumpMultiplier, "空中取得後すぐに追加ジャンプを使える");
+  for (let i = 0; i < 120 && !scene.body.blocked.down; i++) step();
+  assert(scene.body.blocked.down, "空中取得後に地上へ着地");
+  near(scene.body.velocity.x, PLAYER.speed * PLAYER.dashMultiplier, "空中取得では着地したフレームから最高速度");
   reset(); restored();
-  pass("空中取得・空中での効果終了・更新間隔によらない持続時間・空中での手動リセット");
+  pass("空中取得と時間切れで速度維持・着地で即最高速度・更新間隔によらない持続時間・空中での手動リセット");
 
   for (const sign of [-1, 1]) {
     const distant = { ...stage, ...parseStageMap(map, { ...STAGE_MAP_GRID, originX: 680 + sign * REBASE_DISTANCE }) };
