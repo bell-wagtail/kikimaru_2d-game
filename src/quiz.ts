@@ -6,12 +6,14 @@ export interface QuizView {
   readonly prompt: string;
   readonly choices: readonly string[];
   readonly correctIndex: number;
+  readonly explanation: string;
 }
 
 export interface QuizResult {
   readonly correct: boolean;
   readonly correctAnswer: string;
   readonly points: number;
+  readonly explanation: string;
 }
 
 export function drawQuiz(random: () => number = Math.random): QuizView {
@@ -22,7 +24,7 @@ export function drawQuiz(random: () => number = Math.random): QuizView {
     [choices[index], choices[other]] = [choices[other], choices[index]];
   }
   return { id: question.id, prompt: question.prompt, choices: choices.map(choice => choice.text),
-    correctIndex: choices.findIndex(choice => choice.correct) };
+    correctIndex: choices.findIndex(choice => choice.correct), explanation: question.explanation };
 }
 
 export class QuizState {
@@ -39,7 +41,7 @@ export class QuizState {
     if (!this.current || this.result || !Number.isInteger(index) || index < 0 || index >= this.current.choices.length) return undefined;
     const correct = index === this.current.correctIndex;
     this.result = { correct, correctAnswer: this.current.choices[this.current.correctIndex],
-      points: correct ? SCORE_RULES.quizCorrect : SCORE_RULES.quizIncorrect };
+      points: correct ? SCORE_RULES.quizCorrect : SCORE_RULES.quizIncorrect, explanation: this.current.explanation };
     return this.result;
   }
 

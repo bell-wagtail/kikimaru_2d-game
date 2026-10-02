@@ -50,7 +50,7 @@
 
 対応の正本は [items.ts](../src/items.ts) の `ITEM_TYPES` です。`type` は能力付き・得点のみ・クイズの区分、`assetKey` はmanifestの素材キー、`symbol` は文字マップの記号、`name` は通知に使う名前です。能力付きアイテムの `effect` は能力、`durationSeconds` は効果時間、`glow.color` は発光色、`glow.diameterScale` はキャラクターの大きさに対する円形発光の直径倍率です。持続時間と演出はここから種類ごとに変更できます。素材パス・実寸はmanifestを正とします。
 
-種類を追加する場合は、素材をmanifestへ登録し、`ITEM_TYPES` へ区分・素材・重複しない記号を追加します。能力なしの種類の配点は [score.ts](../src/score.ts) の `SCORE_RULES.items` へ追加します。能力付きアイテムの共通配点・クイズの正誤配点・スコアの初期値と上下限も同定義が正本です。クイズの問題文・4択・正解の元の添字は [quizData.ts](../src/quizData.ts) の `QUIZ_QUESTIONS` を編集します。
+種類を追加する場合は、素材をmanifestへ登録し、`ITEM_TYPES` へ区分・素材・重複しない記号を追加します。能力なしの種類の配点は [score.ts](../src/score.ts) の `SCORE_RULES.items` へ追加します。能力付きアイテムの共通配点・クイズの正誤配点・スコアの初期値と上下限も同定義が正本です。クイズの問題文・4択・正解の元の添字・一文豆知識・出典URLは [quizData.ts](../src/quizData.ts) の `QUIZ_QUESTIONS` を編集します。`explanation` は回答後に表示する一文、`sourceUrl` は内容を確認するための公式情報のURLです。
 
 小物PNGは `assets/props/` から解決し、ステージで使う種類だけをPhaserへ読み込みます。新しい能力は [movement.ts](../src/movement.ts) に動作を追加します。取得済み状態と表示は `StageItems`、能力と残り時間は [powerUps.ts](../src/powerUps.ts)、出題・回答状態は [quiz.ts](../src/quiz.ts) に分けています。操作・停止・リセットの方針は [RUN](RUN.md) を参照してください。
 

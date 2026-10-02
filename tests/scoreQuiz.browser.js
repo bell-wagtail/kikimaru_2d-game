@@ -20,7 +20,12 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
     scene.body.blocked.down = bottom === WORLD.ground;
     scene.previousPlayerX = x;
   };
-  const collect = kind => { place(item(kind).image.x); scene.update(0, 0); };
+  const collect = kind => {
+    place(item(kind).image.x); scene.update(0, 0);
+    if (kind === "quiz" && scene.quiz.current && !scene.quiz.result) {
+      assert(dialog().querySelector("#quiz-result").hidden && dialog().querySelector("#quiz-fact").textContent === "", "未回答では豆知識を表示せず、前の問題の解説も残さない");
+    }
+  };
   const score = expected => {
     near(scene.score.value, expected, "スコア値");
     assert(document.querySelector("#score").textContent === `${expected}点`, "スコア表示が現在値と一致");
@@ -32,6 +37,7 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
     assert(scene.quiz.result.correct === correct, "並べ替え後の正誤判定");
     assert(choices().every(button => button.disabled), "回答後は全選択肢を無効化");
     assert(dialog().querySelector("#quiz-result").textContent.includes(question.choices[question.correctIndex]), "正解を表示");
+    assert(!dialog().querySelector("#quiz-result").hidden && dialog().querySelector("#quiz-fact").textContent === `豆知識：${question.explanation}`, "正解・不正解とも現在の問題の豆知識を表示");
     assert(!resume().hidden && scene.physics.world.isPaused, "結果表示中も停止し、明示的な再開を待つ");
   };
   const finish = () => {
@@ -68,7 +74,7 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   assert(dialog().querySelector("#quiz-result").textContent.includes("+100点"), "正解時の配点を表示");
   frames(120); score(170); finish();
   collect("quiz"); assert(!dialog().open, "同じマーカーでその回は再挑戦しない");
-  pass("能力取得10点・魚50点・魚の一度だけ取得、クイズ4択と正解100点、多重回答防止、明示的な再開とマーカー消費");
+  pass("能力取得10点・魚50点・魚の一度だけ取得、クイズ4択と正解100点、回答後だけ豆知識表示、多重回答防止、明示的な再開とマーカー消費");
 
   reset(); restored(); collect("fish"); collect("quiz"); answer(false); score(20);
   assert(dialog().querySelector("#quiz-result").textContent.includes("-30点"), "不正解の減点を表示"); finish();
@@ -77,7 +83,7 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   reset(); scene.score.change(990); collect("quiz"); answer(true); score(1000);
   assert(dialog().querySelector("#quiz-result").textContent.includes("実際の増減 +10点"), "上限で実際の変化も表示"); finish();
   collect("fish"); score(1000);
-  pass("不正解30点減点、下限0・上限1000と上限下限での結果表示、全リセットで初期点と再挑戦");
+  pass("不正解30点減点と豆知識、下限0・上限1000と上限下限での結果表示、再出題で前の解説を消去、全リセットで初期点と再挑戦");
 
   reset(); collect("tea"); collect("shrimp");
   key("ArrowRight", true); key("ShiftLeft", true); scene.update(0, 0);

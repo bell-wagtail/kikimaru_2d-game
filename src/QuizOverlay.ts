@@ -4,7 +4,9 @@ export class QuizOverlay {
   private readonly dialog = document.createElement("dialog");
   private readonly prompt = document.createElement("h2");
   private readonly choices = document.createElement("div");
-  private readonly result = document.createElement("p");
+  private readonly result = document.createElement("div");
+  private readonly verdict = document.createElement("p");
+  private readonly fact = document.createElement("p");
   private readonly resume = document.createElement("button");
 
   constructor(onAnswer: (index: number) => void, onResume: () => void) {
@@ -17,6 +19,9 @@ export class QuizOverlay {
     this.choices.className = "quiz-choices";
     this.result.id = "quiz-result";
     this.result.setAttribute("role", "status");
+    this.result.setAttribute("aria-atomic", "true");
+    this.fact.id = "quiz-fact";
+    this.result.append(this.verdict, this.fact);
     this.resume.type = "button";
     this.resume.textContent = "おさんぽを続ける";
     this.resume.addEventListener("click", onResume);
@@ -38,7 +43,8 @@ export class QuizOverlay {
       button.textContent = text;
       return button;
     }));
-    this.result.textContent = "";
+    this.verdict.textContent = "";
+    this.fact.textContent = "";
     this.result.hidden = true;
     this.resume.hidden = true;
     this.dialog.showModal();
@@ -49,7 +55,8 @@ export class QuizOverlay {
     for (const button of this.choices.querySelectorAll<HTMLButtonElement>("button")) button.disabled = true;
     const signed = (points: number) => `${points >= 0 ? "+" : ""}${points}`;
     const adjustment = actualChange === result.points ? "" : `（実際の増減 ${signed(actualChange)}点）`;
-    this.result.textContent = `${result.correct ? "正解！" : "不正解"} 正解は「${result.correctAnswer}」。${signed(result.points)}点${adjustment} · スコア ${score}点`;
+    this.verdict.textContent = `${result.correct ? "正解！" : "不正解"} 正解は「${result.correctAnswer}」。${signed(result.points)}点${adjustment} · スコア ${score}点`;
+    this.fact.textContent = `豆知識：${result.explanation}`;
     this.result.hidden = false;
     this.resume.hidden = false;
     this.resume.focus({ preventScroll: true });

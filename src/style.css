@@ -26,6 +26,7 @@ div#stage { width: 100%; aspect-ratio: 1200 / 650; touch-action: none; }
 #quiz-dialog button:hover:enabled { background: #e8ddef; }
 #quiz-dialog button:disabled { cursor: default; color: #736879; background: #f2efea; }
 #quiz-result { line-height: 1.8; }
+#quiz-fact { padding: 12px 14px; border-radius: 12px; background: #eef3e6; font-size: 14px; line-height: 1.8; }
 #quiz-dialog > button { width: 100%; text-align: center; font-weight: 700; background: #e8ddef; }
 @media (max-width: 700px) { .score-label { top: 10px; right: 10px; padding: 6px 10px; font-size: 10px; } #quiz-dialog { padding: 20px; } }
 #loading { position: absolute; inset: 0; margin: 0; display: grid; place-content: center; padding: 20px; background: #f7f5efed; text-align: center; z-index: 2; }

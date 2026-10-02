@@ -35,9 +35,9 @@
 | プレイヤーの能力・残り時間 | [powerUps.ts](src/powerUps.ts) |
 | アイテムの表示・取得済み状態・取得判定・座標補正 | [StageItems.ts](src/StageItems.ts) |
 | スコアの初期値・上下限・能力付き／種類ごとの配点・クイズの正誤配点 | [score.ts](src/score.ts) の `SCORE_RULES` |
-| クイズの問題文・4択・正解 | [quizData.ts](src/quizData.ts) の `QUIZ_QUESTIONS` |
+| クイズの問題文・4択・正解・一文豆知識・出典URL | [quizData.ts](src/quizData.ts) の `QUIZ_QUESTIONS` |
 | ランダム出題・選択肢の並べ替え・回答済み状態 | [quiz.ts](src/quiz.ts) |
-| クイズの選択肢・正誤と正解・点数変化・再開ボタン | [QuizOverlay.ts](src/QuizOverlay.ts) |
+| クイズの選択肢・正誤と正解・点数変化・豆知識・再開ボタン | [QuizOverlay.ts](src/QuizOverlay.ts) |
 | 取得・終了通知の時間、終了前の明滅周期、発光の透明度・中心高さ | [feedback.ts](src/feedback.ts) の `ITEM_FEEDBACK` |
 | キャラクターに追従する円形発光・画面に固定する短い通知 | [ItemFeedback.ts](src/ItemFeedback.ts) |
 | ダッシュのスピード線の色・太さ・長さ・本数・流れる速さ | [dashFeedback.ts](src/dashFeedback.ts) の `DASH_FEEDBACK` |
