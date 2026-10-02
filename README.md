@@ -28,8 +28,8 @@
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
-| ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) |
-| 文字マップによる岩・穴・アイテムの配置 | [stage-maps/](src/stage-maps/) |
+| ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) の `STAGES` / `STAGE_MAP_GRID` / `TRAIL_MAP_GRID` |
+| 文字マップによる岩・穴・アイテムの配置 | [現行マップ](src/stage-maps/tea-river.txt)・[寄り道マップ](src/stage-maps/tea-river-trail.txt) |
 | 文字マップの記号・座標への変換 | [stageMap.ts](src/stageMap.ts) |
 | アイテムの種類・素材キー・文字マップ記号・効果・持続時間・名前・発光色と大きさ | [items.ts](src/items.ts) の `ITEM_TYPES` |
 | プレイヤーの能力・残り時間 | [powerUps.ts](src/powerUps.ts) |

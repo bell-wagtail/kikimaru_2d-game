@@ -10,6 +10,7 @@ import { verifyItems } from "./items.browser.js";
 import { verifyItemFeedback } from "./feedback.browser.js";
 import { verifySpeedLines } from "./speedLines.browser.js";
 import { verifyScoreQuiz } from "./scoreQuiz.browser.js";
+import { verifyTrailStage } from "./trailStage.browser.js";
 import { ITEM_TYPES } from "../src/items.ts";
 
 const game = new Phaser.Game({
@@ -21,7 +22,7 @@ const game = new Phaser.Game({
 });
 const output = document.querySelector("#results");
 const run = document.querySelector("#run");
-const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview], [data-fruit-preview]")];
+const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview], [data-fruit-preview], [data-trail-preview]")];
 let time = 0;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const near = (a, b, message) => assert(Math.abs(a-b) < 1e-6, `${message}: ${a} / ${b}`);
@@ -40,6 +41,29 @@ const ready = () => {
   }
 };
 game.events.on("poststep", ready);
+
+for (const button of previewButtons.filter(button => button.hasAttribute("data-trail-preview"))) {
+  button.addEventListener("click", async () => {
+    run.disabled = true;
+    for (const preview of previewButtons) preview.disabled = true;
+    game.loop.stop();
+    const scene = game.scene.getScene("walk");
+    const recreated = new Promise(resolve => scene.events.once("create", resolve));
+    scene.scene.restart({ stage: STAGES.teaRiverTrail });
+    game.loop.start(game.step.bind(game));
+    await recreated;
+    game.loop.stop(); scene.physics.resume();
+    if (button.dataset.trailPreview === "high") {
+      const shrimp = STAGES.teaRiverTrail.items.find(item => item.kind === "shrimp");
+      scene.body.reset(shrimp.x - PLAYER.width - 20, WORLD.ground - PLAYER.height / 2);
+    }
+    step(); render();
+    output.textContent = "寄り道ステージ。右へ進み、お茶で走り、えびの2段ジャンプで高台へ登れます。クイズは平地に3か所あります。";
+    run.disabled = false;
+    for (const preview of previewButtons) preview.disabled = false;
+    game.loop.start(game.step.bind(game));
+  });
+}
 
 document.querySelector("[data-fruit-preview]").addEventListener("click", async () => {
   run.disabled = true;
@@ -315,6 +339,7 @@ run.addEventListener("click", async () => {
     await verifyItemFeedback({ scene, game, key, step, restart, pass, assert, near });
     await verifySpeedLines({ scene, game, key, step, restart, pass, assert, near });
     await verifyScoreQuiz({ scene, game, key, step, restart, pass, assert, near });
+    await verifyTrailStage({ scene, key, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);

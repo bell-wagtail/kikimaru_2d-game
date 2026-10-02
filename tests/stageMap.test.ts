@@ -64,9 +64,11 @@ test("bottom-row blanks form finite holes while blanks above the floor stay empt
     [{ id: "hole-c0", x: -200, width: 240 }]);
 });
 
-test("the editable stage remains valid without fixing its arrangement in regression tests", () => {
-  const text = readFileSync(new URL("../src/stage-maps/tea-river.txt", import.meta.url), "utf8");
-  assert.doesNotThrow(() => parseStageMap(text, grid));
+test("the editable stages remain valid without fixing their arrangements in regression tests", () => {
+  for (const filename of ["tea-river.txt", "tea-river-trail.txt"]) {
+    const text = readFileSync(new URL(`../src/stage-maps/${filename}`, import.meta.url), "utf8");
+    assert.doesNotThrow(() => parseStageMap(text, grid));
+  }
 });
 
 test("invalid cell sizes, nonfinite origins, and overflowing output coordinates are rejected", () => {
