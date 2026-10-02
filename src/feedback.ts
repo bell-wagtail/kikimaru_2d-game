@@ -3,7 +3,7 @@ import type { ItemKind } from "./items.ts";
 
 export const ITEM_FEEDBACK = {
   noticeSeconds: 2, warningSeconds: 3,
-  normalPulseSeconds: 1.6, warningPulseSeconds: 0.6, urgentPulseSeconds: 0.3,
+  normalPulseSeconds: 2.3, warningPulseSeconds: 0.4, urgentPulseSeconds: 0.3,
   minAlpha: 0.55, maxAlpha: 0.95,
   centerHeightRatio: 0.5, textureSize: 256,
   noticeY: 130, noticeFontSize: 34

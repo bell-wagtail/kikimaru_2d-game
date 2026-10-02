@@ -12,6 +12,7 @@ import { StageItems } from "../StageItems";
 import { ITEM_TYPES, validateItems } from "../items";
 import { PowerUpState } from "../powerUps";
 import { ItemFeedback } from "../ItemFeedback";
+import { SpeedLines } from "../SpeedLines";
 import { GROUND, StageGround } from "../StageGround";
 import { canLandOnGround } from "../ground";
 
@@ -37,6 +38,7 @@ export class WalkScene extends Phaser.Scene {
   private obstacles!: FixedObstacles;
   private items!: StageItems;
   private feedback!: ItemFeedback;
+  private speedLines!: SpeedLines;
   private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
@@ -91,6 +93,7 @@ export class WalkScene extends Phaser.Scene {
     this.items = new StageItems(this, stageItems(this.stageDefinition));
     this.cameras.main.setScroll(0, 0);
     this.feedback = new ItemFeedback(this);
+    this.speedLines = new SpeedLines(this);
 
     this.makeApron();
     this.shadow = this.add.ellipse(WORLD.width / 2, WORLD.ground + 3, 94, 16, 0x58456a, 0.15);
@@ -117,7 +120,7 @@ export class WalkScene extends Phaser.Scene {
     });
 
     const unbind = bindControls(this.controls, () => this.resetPlayer());
-    const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.physics.pause(); };
+    const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.speedLines.reset(); this.physics.pause(); };
     const resume = () => { this.controls.clear(); this.physics.resume(); };
     this.game.events.on(Phaser.Core.Events.BLUR, suspend);
     this.game.events.on(Phaser.Core.Events.FOCUS, resume);
@@ -154,6 +157,7 @@ export class WalkScene extends Phaser.Scene {
     this.movementState.reset();
     this.powerUps.reset();
     this.feedback.reset();
+    this.speedLines.reset();
     this.obstacles.reset();
     this.items.reset();
     this.ground.reset();
@@ -200,7 +204,9 @@ export class WalkScene extends Phaser.Scene {
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
     this.animate(movement.walking, airborne, dt, movement.pace);
-    this.feedback.update({ x: this.actor.x, bottom: this.actor.y, width: this.body.width, height: this.body.height }, this.powerUps, elapsed);
+    const anchor = { x: this.actor.x, bottom: this.actor.y, width: this.body.width, height: this.body.height };
+    this.feedback.update(anchor, this.powerUps, elapsed);
+    this.speedLines.update(anchor, this.body.velocity.x, elapsed);
     const directionLabel = this.facing === 1 ? "右へ" : "左へ";
     const motionLabel = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
       : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`

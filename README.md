@@ -36,6 +36,8 @@
 | アイテムの表示・取得済み状態・取得判定・座標補正 | [StageItems.ts](src/StageItems.ts) |
 | 取得・終了通知の時間、終了前の明滅周期、発光の透明度・中心高さ | [feedback.ts](src/feedback.ts) の `ITEM_FEEDBACK` |
 | キャラクターに追従する円形発光・画面に固定する短い通知 | [ItemFeedback.ts](src/ItemFeedback.ts) |
+| ダッシュのスピード線の色・太さ・長さ・本数・流れる速さ | [dashFeedback.ts](src/dashFeedback.ts) の `DASH_FEEDBACK` |
+| 実際の横速度に応じたスピード線の表示・追従 | [SpeedLines.ts](src/SpeedLines.ts) |
 | 反復位置・長距離移動時の座標補正 | [scrolling.ts](src/scrolling.ts) |
 | 固定障害物の表示・物理ボディ・座標補正 | [FixedObstacles.ts](src/FixedObstacles.ts) |
 | 穴の表示・床の物理ボディ・座標補正・落下判定の基準 | [StageGround.ts](src/StageGround.ts) |
