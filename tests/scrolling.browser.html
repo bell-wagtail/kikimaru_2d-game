@@ -2,6 +2,7 @@
 <html lang="ja">
 <meta charset="utf-8">
 <title>移動・横スクロール・障害物結合テスト</title>
+<link rel="stylesheet" href="../src/style.css">
 <style>body{font:16px sans-serif;background:#faf8f0;margin:20px}button{padding:12px;margin:4px}#stage{width:min(100%,1200px)}canvas{max-width:100%;height:auto}#results{white-space:pre-wrap}</style>
 <h1>移動・横スクロール・障害物結合テスト</h1>
 <p>現行のWalkSceneで加減速・長距離移動・岩の衝突・文字マップの段差を登る連続ジャンプ・アイテム取得とパワーアップ・穴への落下とリスポーン・座標補正・リセットを検証します。</p>
@@ -15,9 +16,10 @@
 <button data-speed-preview="half" disabled>加速途中の線を見る</button>
 <button data-speed-preview="full" disabled>最高速度の線を見る</button>
 <button data-speed-preview="both" disabled>発光とスピード線を見る</button>
+<button data-quiz-preview disabled>クイズを見る</button>
 <button id="reset">まんなかに戻る</button>
 <button data-action="left">左へ</button><button data-action="right">右へ</button><button data-action="jump">ジャンプ</button>
-<p id="loading">読み込み中</p><p id="state"></p><pre id="results" role="status"></pre>
+<p id="loading">読み込み中</p><p id="state"></p><p>スコア <output id="score">0点</output></p><pre id="results" role="status"></pre>
 <div id="stage" tabindex="0"></div>
 <script type="module" src="./scrolling.browser.js"></script>
 </html>

@@ -1,16 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ITEM_TYPES, itemKindForSymbol, validateItems } from "../src/items.ts";
+import { ITEM_TYPES, POWER_UP_KINDS, isPowerUpKind, itemKindForSymbol, validateItems } from "../src/items.ts";
 import { PowerUpState } from "../src/powerUps.ts";
 
 test("item definitions uniquely associate map symbols, assets, effects and positive durations", () => {
   const definitions = Object.values(ITEM_TYPES);
   assert.equal(new Set(definitions.map(item => item.symbol)).size, definitions.length);
   assert.ok(definitions.every(item => item.symbol.length === 1 && ![".", " ", "=", "x"].includes(item.symbol)));
-  assert.ok(definitions.every(item => Number.isFinite(item.durationSeconds) && item.durationSeconds > 0));
+  assert.ok(POWER_UP_KINDS.every(kind => Number.isFinite(ITEM_TYPES[kind].durationSeconds) && ITEM_TYPES[kind].durationSeconds > 0));
   assert.equal(itemKindForSymbol("o"), "tea"); assert.equal(itemKindForSymbol("j"), "shrimp");
   assert.equal(itemKindForSymbol("?"), undefined);
   assert.equal(ITEM_TYPES.tea.assetKey, "props/tea"); assert.equal(ITEM_TYPES.shrimp.effect, "doubleJump");
+  assert.equal(itemKindForSymbol("F"), "fish"); assert.equal(itemKindForSymbol("Q"), "quiz");
+  assert.equal(ITEM_TYPES.fish.assetKey, "props/fish"); assert.equal(ITEM_TYPES.quiz.assetKey, "props/quiz_marker");
+  assert.equal(isPowerUpKind("fish"), false); assert.equal(isPowerUpKind("quiz"), false);
 });
 
 test("item geometry accepts both kinds and rejects duplicate IDs, unknown kinds and invalid sizes", () => {
