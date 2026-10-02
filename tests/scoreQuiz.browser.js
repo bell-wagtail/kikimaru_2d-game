@@ -49,14 +49,14 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   };
   const restored = () => {
     score(SCORE_RULES.initial);
-    assert(scene.items.items.every(item => !item.collected && item.image.visible), "魚・クイズ・能力アイテムを復元");
+    assert(scene.items.items.every(item => !item.collected && item.image.visible), "魚・果物・クイズ・能力アイテムを復元");
     assert(!scene.quiz.current && !dialog().open, "クイズ状態と画面を解除");
     assert(!scene.powerUps.active("autoDash") && !scene.powerUps.active("doubleJump"), "従来どおり能力を解除");
     near(scene.items.originX, 0, "アイテムの補正量を解除");
   };
   const aligned = () => {
     for (const target of scene.items.items) {
-      near(target.image.x, target.definition.x + target.definition.width / 2 - scene.items.originX, "魚とクイズも表示を座標補正");
+      near(target.image.x, target.definition.x + target.definition.width / 2 - scene.items.originX, "魚・果物・クイズも表示を座標補正");
       assert(target.image.visible === !target.collected && !target.image.body, "取得状態と表示が一致し、物理ボディを追加しない");
       assert(target.image.displayWidth <= target.definition.width && target.image.displayHeight <= target.definition.height, "素材をマスへ収める");
     }
@@ -78,6 +78,21 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   collect("quiz"); assert(!dialog().open, "同じマーカーでその回は再挑戦しない");
   pass("能力取得10点・魚50点・魚の一度だけ取得、クイズ4択と正解100点、回答後だけ豆知識表示、多重回答防止、明示的な再開とマーカー消費");
 
+  reset(); restored(); collect("mandarin"); score(20); collect("strawberry"); score(50);
+  assert(scene.feedback.message.text.includes("みかんを取得！") && scene.feedback.message.text.includes("いちごを取得！"), "果物は種類ごとの取得通知を表示");
+  assert(scene.powerUps.activeItems().length === 0 && scene.feedback.glows.every(glow => !glow.image.visible), "果物には能力時間・発光を追加しない");
+  for (const kind of ["mandarin", "strawberry"]) {
+    collect(kind); score(50);
+    assert(item(kind).collected && !item(kind).image.visible, "果物も一度だけ取得して表示を消す");
+  }
+  reset(); restored(); collect("tea"); collect("shrimp");
+  const powerTimes = [scene.powerUps.secondsLeft("autoDash"), scene.powerUps.secondsLeft("doubleJump")];
+  collect("mandarin"); collect("strawberry"); score(70);
+  near(scene.powerUps.secondsLeft("autoDash"), powerTimes[0], "みかん・いちご取得でお茶の時間を変更しない");
+  near(scene.powerUps.secondsLeft("doubleJump"), powerTimes[1], "みかん・いちご取得でえびの時間を変更しない");
+  assert(scene.feedback.glows.length === 2, "果物取得で能力の発光を増やさない");
+  pass("みかん20点・いちご30点と取得通知、一度だけ取得、能力なし・発光なし、併用中の能力時間を維持");
+
   reset(); restored(); collect("fish"); collect("quiz"); answer(false); score(20);
   assert(dialog().querySelector("#quiz-result").textContent.includes("-30点"), "不正解の減点を表示"); finish();
   reset(); collect("quiz"); answer(false); score(0);
@@ -85,6 +100,7 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   reset(); scene.score.change(990); collect("quiz"); answer(true); score(1000);
   assert(dialog().querySelector("#quiz-result").textContent.includes("実際の増減 +10点"), "上限で実際の変化も表示"); finish();
   collect("fish"); score(1000);
+  collect("mandarin"); collect("strawberry"); score(1000);
   pass("不正解30点減点と豆知識、下限0・上限1000と上限下限での結果表示、再出題で前の解説を消去、全リセットで初期点と再挑戦");
 
   reset(); collect("tea"); collect("shrimp");
@@ -118,35 +134,40 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   assert(scene.powerUps.secondsLeft("autoDash") < JSON.parse(before).powers[0], "再開後から能力時間を進める");
   pass("空中クイズ中の物理・能力・発光・通知・背景・アニメ停止、未回答の閉鎖拒否、入力解除、フォーカス復帰と速度保持での再開");
 
-  reset(); collect("fish"); collect("quiz"); answer(true); finish();
+  reset(); collect("fish"); collect("mandarin"); collect("strawberry"); collect("quiz"); answer(true); score(200); finish();
   const hole = stage.holes[0]; place(hole.x + hole.width / 2, WORLD.ground + 5);
   let respawned = false;
   for (let i = 0; i < 150; i++) { step(); if (scene.body.center.x === WORLD.width / 2) { respawned = true; break; } }
-  assert(respawned, "魚・回答済みクイズを持つ状態から穴へ落ちてリスポーン"); restored();
-  collect("quiz"); answer(false); finish();
+  assert(respawned, "魚・果物・回答済みクイズを持つ状態から穴へ落ちてリスポーン"); restored();
+  collect("mandarin"); collect("strawberry"); collect("quiz"); answer(false); score(20); finish();
   near(scene.children.length, children, "リスポーン・再挑戦でも表示を増やさない");
   near(scene.physics.world.staticBodies.size, bodies, "新アイテムとクイズで物理ボディを増やさない");
-  pass("落下リスポーンでスコア0・魚とクイズを復元して再挑戦、表示と物理ボディ数を維持");
+  pass("落下リスポーンでスコア0・魚と果物とクイズを復元して再取得と再挑戦、表示と物理ボディ数を維持");
 
   for (const sign of [-1, 1]) {
     await restart({ ...stage, ...parseStageMap(map, { ...STAGE_MAP_GRID, originX: 800 + sign * REBASE_DISTANCE }) });
-    const fish = item("fish"), marker = item("quiz");
+    const fish = item("fish"), marker = item("quiz"), fruits = [item("mandarin"), item("strawberry")];
     place(WORLD.width / 2 + sign * (REBASE_DISTANCE + 10)); scene.update(0, 0); aligned();
     near(scene.items.originX, sign * REBASE_DISTANCE, "魚とクイズも左右の補正へ参加");
-    assert(!fish.collected && !marker.collected, "補正境界で誤接触しない");
+    assert(!fish.collected && !marker.collected && fruits.every(fruit => !fruit.collected), "補正境界で誤接触しない");
     place(fish.image.x + sign * REBASE_DISTANCE); scene.update(0, 0); aligned();
     assert(!fish.collected && !marker.collected, "補正前の座標では誤接触しない");
+    for (const fruit of fruits) {
+      place(fruit.image.x + sign * REBASE_DISTANCE); scene.update(0, 0); aligned();
+      assert(!fruit.collected, "果物も補正前の座標では誤取得しない");
+    }
     collect("fish"); score(50);
+    collect("mandarin"); score(70); collect("strawberry"); score(100);
     place(WORLD.width / 2 - sign * REBASE_DISTANCE * 3); scene.update(0, 0); aligned();
     collect("quiz"); assert(dialog().open && marker.collected, "複数補正後に表示位置でクイズ接触");
     near(scene.actor.x - scene.cameras.main.scrollX, WORLD.width / 2, "補正と接触が同フレームでもキャラクター表示が一致");
-    answer(true); score(150); finish(); aligned();
+    answer(true); score(200); finish(); aligned();
     reset(); restored(); aligned();
   }
-  pass("左右・複数回の座標補正後の魚取得・クイズ接触と再訪、元の座標で誤接触せず、補正後の復元");
+  pass("左右・複数回の座標補正後の魚と果物取得・クイズ接触と再訪、元の座標で誤接触せず、補正後の復元");
 
   await restart({ ...stage, ...parseStageMap(map, { ...STAGE_MAP_GRID, originX: 800, cellWidth: 80, cellHeight: 40 }) });
-  aligned(); collect("fish"); collect("quiz");
+  aligned(); collect("fish"); collect("mandarin"); collect("strawberry"); score(100); collect("quiz");
   await restart(stage); restored();
   assert(document.querySelectorAll("#quiz-dialog").length === 1, "未回答の再起動でもダイアログとイベントを重複させない");
   near(scene.children.length, children, "再起動でPhaser表示が重複しない");

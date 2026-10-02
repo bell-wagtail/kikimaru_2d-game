@@ -13,6 +13,9 @@ test("item definitions uniquely associate map symbols, assets, effects and posit
   assert.equal(ITEM_TYPES.tea.assetKey, "props/tea"); assert.equal(ITEM_TYPES.shrimp.effect, "doubleJump");
   assert.equal(itemKindForSymbol("F"), "fish"); assert.equal(itemKindForSymbol("Q"), "quiz");
   assert.equal(ITEM_TYPES.fish.assetKey, "props/fish"); assert.equal(ITEM_TYPES.quiz.assetKey, "props/quiz_marker");
+  assert.equal(itemKindForSymbol("M"), "mandarin"); assert.equal(itemKindForSymbol("S"), "strawberry");
+  assert.equal(ITEM_TYPES.mandarin.assetKey, "props/mandarin"); assert.equal(ITEM_TYPES.strawberry.assetKey, "props/strawberry");
+  assert.equal(isPowerUpKind("mandarin"), false); assert.equal(isPowerUpKind("strawberry"), false);
   assert.equal(isPowerUpKind("fish"), false); assert.equal(isPowerUpKind("quiz"), false);
 });
 

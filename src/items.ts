@@ -4,6 +4,8 @@ export const ITEM_TYPES = {
   shrimp: { type: "powerUp", assetKey: "props/shrimp", symbol: "j", effect: "doubleJump", durationSeconds: 10,
     name: "えび", glow: { color: "#ed6b63", diameterScale: 1.75 } },
   fish: { type: "score", assetKey: "props/fish", symbol: "F", name: "魚" },
+  mandarin: { type: "score", assetKey: "props/mandarin", symbol: "M", name: "みかん" },
+  strawberry: { type: "score", assetKey: "props/strawberry", symbol: "S", name: "いちご" },
   quiz: { type: "quiz", assetKey: "props/quiz_marker", symbol: "Q", name: "クイズ" }
 } as const;
 

@@ -21,7 +21,7 @@ const game = new Phaser.Game({
 });
 const output = document.querySelector("#results");
 const run = document.querySelector("#run");
-const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview]")];
+const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview], [data-fruit-preview]")];
 let time = 0;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const near = (a, b, message) => assert(Math.abs(a-b) < 1e-6, `${message}: ${a} / ${b}`);
@@ -40,6 +40,26 @@ const ready = () => {
   }
 };
 game.events.on("poststep", ready);
+
+document.querySelector("[data-fruit-preview]").addEventListener("click", async () => {
+  run.disabled = true;
+  for (const button of previewButtons) button.disabled = true;
+  game.loop.stop();
+  const scene = game.scene.getScene("walk");
+  const recreated = new Promise(resolve => scene.events.once("create", resolve));
+  scene.scene.restart({ stage: {
+    id: "fruit-preview", background: STAGES.teaRiver.background,
+    items: ["mandarin", "strawberry"].map((kind, index) => ({ id: kind, kind,
+      x: WORLD.width / 2 + 90 + index * 180, y: WORLD.ground - 36, width: 60, height: 36 }))
+  } });
+  game.loop.start(game.step.bind(game));
+  await recreated;
+  game.loop.stop(); scene.physics.resume(); step(); render();
+  output.textContent = "果物プレビュー。右へ進むとみかん・いちごを取得できます。現行マップは変更しません。";
+  run.disabled = false;
+  for (const button of previewButtons) button.disabled = false;
+  game.loop.start(game.step.bind(game));
+});
 
 document.querySelector("[data-quiz-preview]").addEventListener("click", async () => {
   run.disabled = true;

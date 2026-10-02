@@ -94,12 +94,14 @@ test("tea and shrimp symbols become items without altering rocks or holes at a c
   assert.deepEqual(map.holes, [{ id: "hole-c1", x: -160, width: 160 }]);
 });
 
-test("fish and quiz markers share map geometry and IDs without creating rocks or changing holes", () => {
-  const map = parseStageMap("FQx\n=..", { ...grid, originX: -240, cellWidth: 80, cellHeight: 40 });
+test("fish, fruits and quiz markers share map geometry and IDs without creating rocks or changing holes", () => {
+  const map = parseStageMap("FQMSx\n=....", { ...grid, originX: -240, cellWidth: 80, cellHeight: 40 });
   assert.deepEqual(map.items, [
     { id: "fish-r0-c0", kind: "fish", x: -240, y: 510, width: 80, height: 40 },
-    { id: "quiz-r0-c1", kind: "quiz", x: -160, y: 510, width: 80, height: 40 }
+    { id: "quiz-r0-c1", kind: "quiz", x: -160, y: 510, width: 80, height: 40 },
+    { id: "mandarin-r0-c2", kind: "mandarin", x: -80, y: 510, width: 80, height: 40 },
+    { id: "strawberry-r0-c3", kind: "strawberry", x: 0, y: 510, width: 80, height: 40 }
   ]);
   assert.equal(map.obstacles.length, 1);
-  assert.deepEqual(map.holes, [{ id: "hole-c1", x: -160, width: 160 }]);
+  assert.deepEqual(map.holes, [{ id: "hole-c1", x: -160, width: 320 }]);
 });

@@ -13,12 +13,15 @@ test("each acquired item has a named notice and an independently configurable ci
   assert.notEqual(ITEM_TYPES.tea.glow.diameterScale, ITEM_TYPES.shrimp.glow.diameterScale);
 });
 
-test("fish has an acquisition notice without a power timer or glow definition", () => {
-  const notices = new ItemNoticeState(); notices.acquired("fish");
-  assert.equal(notices.text, "魚を取得！");
-  assert.equal(ITEM_TYPES.fish.type, "score");
-  assert.equal("effect" in ITEM_TYPES.fish, false);
-  assert.equal("glow" in ITEM_TYPES.fish, false);
+test("fish and fruits have named notices without power timers or glow definitions", () => {
+  for (const [kind, name] of [["fish", "魚"], ["mandarin", "みかん"], ["strawberry", "いちご"]] as const) {
+    const notices = new ItemNoticeState(); notices.acquired(kind);
+    assert.equal(notices.text, `${name}を取得！`);
+    assert.equal(ITEM_TYPES[kind].type, "score");
+    assert.equal("effect" in ITEM_TYPES[kind], false);
+    assert.equal("durationSeconds" in ITEM_TYPES[kind], false);
+    assert.equal("glow" in ITEM_TYPES[kind], false);
+  }
 });
 
 test("simultaneous notices stay readable and disappear after the configured interval", () => {
