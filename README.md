@@ -49,7 +49,7 @@
 - `src/`：現行ゲーム。入口は `index.html` → `main.ts`。`scenes/` はPhaserのシーン。
 - `src/stage-maps/`：ステージごとの文字マップ。
 - `src/kikimaru-assets/`：現行コードが参照する素材と仕様。
-- `tests/`：入力・移動ロジックのテスト。
+- `tests/`：入力・移動・地形・アイテム・演出の単体テストと、Phaser上の結合テスト。
 - `docs/`：上記の目的別文書。
 - `.github/`：Agent共通指示・CIなどの運用設定。
 - `git-setup/`・`docker/`：既存のGit・セキュリティ検査用の補助環境。
