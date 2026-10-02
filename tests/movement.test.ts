@@ -2,12 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { InputState, keyActions } from "../src/input.ts";
 import { applyMovement, MovementState, PLAYER } from "../src/movement.ts";
+import { PowerUpState } from "../src/powerUps.ts";
+import { ITEM_TYPES } from "../src/items.ts";
 
 const maxSpeed = PLAYER.speed * PLAYER.dashMultiplier;
 const gain = (maxSpeed - PLAYER.speed) / PLAYER.accelerationSeconds;
 const near = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
 function setup(direction = 1) {
   const input = new InputState(), motion = new MovementState();
+  const powers = new PowerUpState();
   const body = {
     blocked: { down: true, left: false, right: false }, touching: { down: false }, vx: 0, vy: 0,
     get velocity() { return { y: this.vy }; },
@@ -15,9 +18,9 @@ function setup(direction = 1) {
     setVelocityY(value: number) { this.vy = value; }
   };
   if (direction) input.press("move", direction < 0 ? "left" : "right");
-  const step = (dt = 1 / 60) => applyMovement(body, input, motion, dt);
+  const step = (dt = 1 / 60) => applyMovement(body, input, motion, dt, powers);
   const advance = (seconds: number, fps = 60) => { for (let i = 0; i < Math.round(seconds * fps); i++) step(1 / fps); };
-  return { input, motion, body, step, advance };
+  return { input, motion, body, step, advance, powers };
 }
 
 test("either Shift ramps both directions to the cap and back over the configured durations", () => {
@@ -140,4 +143,81 @@ test("opposing directions cancel while independent bindings stay held", () => {
   input.press("ArrowLeft", "left"); input.press("KeyA", "left"); input.press("ArrowRight", "right");
   step(); assert.equal(body.vx, 0);
   input.release("ArrowRight"); input.release("KeyA"); step(); assert.equal(body.vx, -PLAYER.speed);
+});
+
+test("tea accelerates like Shift in both directions and cannot charge while stopped or blocked", () => {
+  for (const direction of [-1, 1]) {
+    const tea = setup(direction), shift = setup(direction);
+    tea.powers.acquire("tea"); shift.input.press("shift", "dash");
+    for (let i = 0; i < 180; i++) { tea.step(); shift.step(); near(tea.body.vx, shift.body.vx); }
+    tea.input.release("move"); tea.advance(1); near(tea.motion.speed, PLAYER.speed);
+    tea.input.press("move", direction < 0 ? "left" : "right");
+    tea.body.blocked[direction < 0 ? "left" : "right"] = true;
+    tea.advance(1); near(tea.body.vx, 0); near(tea.motion.speed, PLAYER.speed);
+  }
+});
+
+test("airborne tea acquisition and expiration preserve speed until landing; Shift still works after expiry", () => {
+  const { input, body, step, advance, powers } = setup();
+  input.press("jump", "jump"); step(0); body.blocked.down = false;
+  powers.acquire("tea"); advance(1); near(body.vx, PLAYER.speed);
+  body.blocked.down = true; body.vy = 0; advance(PLAYER.accelerationSeconds);
+  near(body.vx, maxSpeed);
+  input.release("jump"); input.press("jump", "jump"); step(0); body.blocked.down = false;
+  powers.advance(ITEM_TYPES.tea.durationSeconds); advance(1); near(body.vx, maxSpeed);
+  body.blocked.down = true; body.vy = 0; step(); near(body.vx, maxSpeed - gain / 60);
+  input.press("shift", "dash"); step(); near(body.vx, maxSpeed);
+  input.release("shift"); advance(PLAYER.decelerationSeconds); near(body.vx, PLAYER.speed);
+});
+
+test("shrimp permits exactly one air jump with stale ground flags and restores it on a real landing", () => {
+  const { input, body, step, powers, motion } = setup();
+  powers.acquire("shrimp"); input.press("jump", "jump"); assert.equal(step(0).jumping, true);
+  input.release("jump"); input.press("jump", "jump");
+  assert.equal(step(0).jumping, true); near(body.vy, -PLAYER.jumpSpeed * PLAYER.airJumpMultiplier);
+  assert.equal(motion.airJumpUsed, true);
+  body.blocked.down = false; body.vy = 100;
+  input.release("jump"); input.press("jump", "jump");
+  assert.equal(step(0).jumping, false); near(body.vy, 100);
+  body.blocked.down = true; body.vy = 0;
+  assert.equal(step(0).jumping, false); assert.equal(motion.airJumpUsed, false);
+  input.release("jump"); input.press("jump", "jump"); assert.equal(step(0).jumping, true);
+  body.blocked.down = false; input.release("jump"); input.press("jump", "jump");
+  assert.equal(step(0).jumping, true);
+});
+
+test("walking off a ledge and acquiring shrimp in midair allow one jump, including touch input", () => {
+  const { input, body, step, powers } = setup(0);
+  body.blocked.down = false; body.vy = 200;
+  input.press("pointer:1", "jump"); assert.equal(step().jumping, false);
+  powers.acquire("shrimp"); assert.equal(step().jumping, false);
+  input.release("pointer:1"); input.press("pointer:1", "jump");
+  assert.equal(step().jumping, true); near(body.vy, -PLAYER.jumpSpeed * PLAYER.airJumpMultiplier);
+  body.vy = 100; input.press("pointer:2", "jump"); assert.equal(step().jumping, false);
+  input.release("pointer:1"); input.release("pointer:2"); input.press("pointer:2", "jump");
+  assert.equal(step().jumping, false);
+});
+
+test("expiration blocks unused air jumps and reacquiring shrimp cannot recharge a used jump in midair", () => {
+  const { input, body, step, powers } = setup();
+  body.blocked.down = false; body.vy = 100;
+  powers.acquire("shrimp"); powers.advance(ITEM_TYPES.shrimp.durationSeconds);
+  input.press("jump", "jump"); assert.equal(step().jumping, false);
+  powers.acquire("shrimp"); input.release("jump"); input.press("jump", "jump");
+  assert.equal(step().jumping, true);
+  powers.advance(ITEM_TYPES.shrimp.durationSeconds); powers.acquire("shrimp"); body.vy = 100;
+  input.release("jump"); input.press("jump", "jump");
+  assert.equal(step().jumping, false); near(body.vy, 100);
+});
+
+test("both powers preserve horizontal launch speed on the second jump and reset to ordinary movement", () => {
+  const { input, body, step, advance, powers, motion } = setup();
+  powers.acquire("tea"); powers.acquire("shrimp"); advance(PLAYER.accelerationSeconds / 2);
+  input.press("jump", "jump"); step(0); const speed = body.vx;
+  body.blocked.down = false; body.vy = 100;
+  input.release("jump"); input.press("jump", "jump"); assert.equal(step().jumping, true);
+  near(body.vx, speed);
+  powers.reset(); motion.reset(); input.clear(); body.blocked.down = true; body.vy = 0;
+  input.press("move", "right"); step(); near(body.vx, PLAYER.speed);
+  body.blocked.down = false; input.press("jump", "jump"); assert.equal(step().jumping, false);
 });

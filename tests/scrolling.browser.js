@@ -6,6 +6,7 @@ import { advanceTile } from "../src/scrolling.ts";
 import { verifyObstacles } from "./obstacles.browser.js";
 import { verifyStageMap } from "./stageMap.browser.js";
 import { verifyGround } from "./ground.browser.js";
+import { verifyItems } from "./items.browser.js";
 
 const game = new Phaser.Game({
   type: new URLSearchParams(location.search).has("canvas") ? Phaser.CANVAS : Phaser.WEBGL,
@@ -76,7 +77,7 @@ run.addEventListener("click", async () => {
     step();
   };
   try {
-    await restart({ ...STAGES.teaRiver, obstacles: [], decorations: [], holes: [] });
+    await restart({ ...STAGES.teaRiver, obstacles: [], items: [], decorations: [], holes: [] });
     document.querySelector("#reset").click();
     step();
     const frames = count => { for (let i = 0; i < count; i++) step(); };
@@ -210,6 +211,7 @@ run.addEventListener("click", async () => {
     await verifyObstacles({ scene, game, key, step, restart, pass, assert, near });
     await verifyStageMap({ scene, key, step, restart, pass, assert, near });
     await verifyGround({ scene, key, step, restart, pass, assert, near });
+    await verifyItems({ scene, game, key, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);

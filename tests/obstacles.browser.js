@@ -10,7 +10,7 @@ export async function verifyObstacles({ scene, key, step, restart, pass, assert,
     obstacles: [
       { id: "left-rock", kind: "rock", x: 120, y: WORLD.ground - 36, width: 60, height: 36 },
       { id: "right-rock", kind: "rock", x: 1020, y: WORLD.ground - 36, width: 60, height: 36 }
-    ], decorations: []
+    ], items: [], decorations: []
   };
   const gain = (maxSpeed - PLAYER.speed) / PLAYER.accelerationSeconds;
   const speeds = [0, PLAYER.accelerationSeconds / 2, PLAYER.accelerationSeconds];

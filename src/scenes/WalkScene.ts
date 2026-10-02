@@ -2,14 +2,16 @@ import Phaser from "phaser";
 import rig from "../kikimaru-assets/rig-layout.json";
 import { bindControls, InputState } from "../input";
 import { applyMovement, MovementState, PLAYER, WORLD } from "../movement";
-import { backgroundAsset, decorationAsset, DEFAULT_STAGE, obstacleAsset } from "../stages";
+import { backgroundAsset, itemAsset, DEFAULT_STAGE, obstacleAsset, stageItems } from "../stages";
 import type { StageDefinition } from "../stages";
 import { RepeatingScenery } from "../RepeatingScenery";
 import { rebaseBody, rebaseShift } from "../scrolling";
 import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
-import { StageDecorations } from "../StageDecorations";
-import { validateDecorations } from "../decorations";
+import { StageItems } from "../StageItems";
+import { ITEM_TYPES, validateItems } from "../items";
+import type { ItemKind } from "../items";
+import { PowerUpState } from "../powerUps";
 import { GROUND, StageGround } from "../StageGround";
 import { canLandOnGround } from "../ground";
 
@@ -21,6 +23,7 @@ type RigPart = (typeof rig.views.right)[number];
 export class WalkScene extends Phaser.Scene {
   private controls = new InputState();
   private movementState = new MovementState();
+  private powerUps = new PowerUpState();
   private body!: Phaser.Physics.Arcade.Body;
   private actor!: Phaser.GameObjects.Container;
   private shadow!: Phaser.GameObjects.Ellipse;
@@ -32,7 +35,7 @@ export class WalkScene extends Phaser.Scene {
   private stageDefinition: StageDefinition = DEFAULT_STAGE;
   private scenery!: RepeatingScenery;
   private obstacles!: FixedObstacles;
-  private decorations!: StageDecorations;
+  private items!: StageItems;
   private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
@@ -49,6 +52,7 @@ export class WalkScene extends Phaser.Scene {
     this.previousPlayerX = WORLD.width / 2;
     this.controls.clear();
     this.movementState.reset();
+    this.powerUps.reset();
   }
 
   preload(): void {
@@ -67,10 +71,10 @@ export class WalkScene extends Phaser.Scene {
       const asset = obstacleAsset(kind);
       this.load.image(asset.key, asset.url);
     }
-    const decorations = this.stageDefinition.decorations ?? [];
-    validateDecorations(decorations);
-    for (const kind of new Set(decorations.map(decoration => decoration.kind))) {
-      const asset = decorationAsset(kind);
+    const items = stageItems(this.stageDefinition);
+    validateItems(items);
+    for (const kind of new Set(items.map(item => item.kind))) {
+      const asset = itemAsset(kind);
       this.load.image(asset.key, asset.url);
     }
     for (const part of new Set(rig.views.right.map(item => item.part))) {
@@ -83,7 +87,7 @@ export class WalkScene extends Phaser.Scene {
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
     this.ground = new StageGround(this, this.stageDefinition.holes ?? []);
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
-    this.decorations = new StageDecorations(this, this.stageDefinition.decorations ?? []);
+    this.items = new StageItems(this, stageItems(this.stageDefinition));
     this.cameras.main.setScroll(0, 0);
 
     this.makeApron();
@@ -146,8 +150,9 @@ export class WalkScene extends Phaser.Scene {
   private resetPlayer(): void {
     this.controls.clear();
     this.movementState.reset();
+    this.powerUps.reset();
     this.obstacles.reset();
-    this.decorations.reset();
+    this.items.reset();
     this.ground.reset();
     this.body.reset(WORLD.width / 2, WORLD.ground - PLAYER.height / 2);
     this.body.setVelocity(0);
@@ -172,24 +177,32 @@ export class WalkScene extends Phaser.Scene {
     if (shift) {
       rebaseBody(this.body, this.body.gameObject as Phaser.GameObjects.Zone, shift);
       this.obstacles.rebase(shift);
-      this.decorations.rebase(shift);
+      this.items.rebase(shift);
       this.ground.rebase(shift);
     }
     this.previousPlayerX = this.body.center.x;
     this.cameras.main.setScroll(this.body.center.x - WORLD.width / 2, 0);
     const dt = Math.min(delta / 1000, 0.05);
+    this.powerUps.advance(delta / 1000);
+    for (const kind of this.items.collect(this.body)) this.powerUps.acquire(kind);
     const contacts = this.obstacles.contacts(this.body);
     const groundContacts = this.ground.contacts(this.body);
     this.body.blocked.left ||= contacts.left || groundContacts.left;
     this.body.blocked.right ||= contacts.right || groundContacts.right;
-    const movement = applyMovement(this.body, this.controls, this.movementState, dt);
+    const movement = applyMovement(this.body, this.controls, this.movementState, dt, this.powerUps);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);
     this.animate(movement.walking, airborne, dt, movement.pace);
     const directionLabel = this.facing === 1 ? "右へ" : "左へ";
-    const label = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
+    const motionLabel = airborne ? (movement.dashing ? "ダッシュジャンプ！" : "ジャンプ！")
       : movement.walking ? `${directionLabel}${movement.dashing ? "ダッシュ中" : "おさんぽ中"}`
       : "ひとやすみ · Spaceでジャンプ";
+    const effects = (Object.keys(ITEM_TYPES) as ItemKind[]).flatMap(kind => {
+      const item = ITEM_TYPES[kind];
+      const seconds = this.powerUps.secondsLeft(item.effect);
+      return seconds > 0 ? [`${item.label} ${Math.ceil(seconds)}秒`] : [];
+    });
+    const label = [motionLabel, ...effects].join(" · ");
     if (this.status.textContent !== label) this.status.textContent = label;
   }
 
