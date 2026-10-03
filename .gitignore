@@ -22,6 +22,12 @@ __pycache__/
 # Logs
 *.log
 
+# Game development outputs
+node_modules/
+dist/
+.npm-cache/
+mise.local.toml
+
 # Security scan reports
 semgrep-results.json
 gitleaks-results.json

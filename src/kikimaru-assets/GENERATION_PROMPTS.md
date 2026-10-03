@@ -1,6 +1,6 @@
 # 画像生成プロンプト
 
-生成方式：組み込みの image_gen。参照：本会話で採用したききまるの立体風デザイン。
+採用素材の再制作に使うプロンプトと、非採用・修正時の再発防止事項です。生成方式は組み込みの image_gen、キャラクターの参照はプロジェクトで採用したききまるの立体風デザインです。現行の素材仕様と採用状況は [素材README](README.md) を参照してください。
 
 ## 正面パーツ
 
@@ -36,3 +36,39 @@ Use case: illustration-story. Asset type: static wide 2D mobile platform game ba
 ## v2 直線腕
 
 組み込み画像生成機能で、正面パーツシートを参照し、クリーム色・紫褐色の輪郭を保った単一の直線カプセル形の腕を生成。肘の曲がり、くびれ、指は省き、上下に丸い端を持つアルファ透過PNGを指定。画像の範囲を切り出し、正面・右向きのarm.pngに共用。
+
+## 横方向の反復用背景
+
+画風・色合いの参照は `assets/backgrounds/tea_river.png`、採用画像は `assets/backgrounds/tea_river_repeat_x.png` です。初稿には空の左右の明度差があり、そのまま反復すると縦の継ぎ目が出ました。修正では初稿と3枚連結画像を参照し、空の水平方向の色差を抑えるよう指定しています。
+
+### 初稿
+
+```text
+Use case: illustration-story.
+Asset type: horizontally seamless repeating scenic backdrop tile for a 2D family-friendly game.
+Input image 1: STYLE, PALETTE AND WORLD REFERENCE, the project's existing tea_river background. Create a new companion background; retain its soft clean painterly anime illustration, gently layered foliage, bright pale blue sky, blue-green distant mountain ridges, fresh yellow-green tea fields, small Japanese countryside houses and winding light-blue river. Not a photograph, not pixel art.
+Output one opaque landscape PNG, 1536x1024 requested. Full bleed with no border, captions, panels or watermark.
+CRITICAL: tile must repeat HORIZONTALLY when exact identical copies are placed edge-to-edge, no mirroring, no overlap. Treat horizontal coordinates as periodic. Right edge must continue directly into left edge with matching sky colors, cloud contours, ridge heights AND slopes, distant trees, tea-field rows and foreground grass texture. Design the wraparound seam intentionally; no visible vertical line or brightness shift. Top and bottom do NOT need to tile.
+Composition similar to reference: open blue sky upper third; layered distant ridges and small tea-growing village across middle; gently winding river visible within middle scene and hidden behind hills before edges, not abruptly cut off; simple pale lime green open grass fills lower third, grass rear boundary is level. Keep perspective and scale consistent. At left/right boundary, mountain ridge at same height and smooth tangent, same middle-distance tea hills and connected shrub silhouettes, same level ground and light. Use an asymmetric, natural countryside composition rather than bilateral symmetry. Keep clouds entirely within tile if needed to avoid clipping; seamless sky gradient varying vertically only. No dark framing trees, no vignetting, no haze band at seam, no empty side margins.
+Preserve inviting daylight, restrained soft contrast and details for foreground readability. No characters, props, game platforms, UI, text or famous landmarks. This is a fictional central-Shizuoka-inspired scenic backdrop, not a geographic map. Produce the SINGLE reusable seamless tile only; not a repeated preview.
+```
+
+### 空の継ぎ目の修正（採用画像）
+
+```text
+Edit image 1, the single horizontally repeating tea-river background tile. Image 2 is a DIAGNOSTIC ONLY: three identical tiles side by side exposing subtle vertical brightness seams in the blue sky at each tile join. Return ONLY ONE single 1536x1024 tile like image 1, not the diagnostic triptych.
+TARGETED FIX: make the sky horizontally uniform in hue/lightness at corresponding heights, removing left-to-right illumination gradient and all vignetting. A gentle vertical sky gradient is fine, but color at x=0 must match color at x=1535 for each y. Keep clouds soft white and their existing design, ensure clouds meeting left/right boundary continue seamlessly.
+Preserve the original image's countryside composition, river, bridge, houses, tea rows, trees, mountain ridge shapes, ground level and grass, and exact style and palette. Also improve exact continuity of tiny mountain/shrub/grass contours at the wrap boundary if needed. Tile right edge must continue into left edge, with no mirrored repetition and no blank or faded strip. Opaque PNG, no labels or guides. The goal is one horizontally seamless repeating background matching image 1 but without the visible SKY seam shown in image 2.
+```
+
+確認画像は PowerShell / System.Drawing で採用PNGを無加工・等倍で3枚並べ、連結境界の左右各384pxを切り出して作成。反転・補間・フェードによる継ぎ目の隠蔽は行っていません。採用PNG自体への後処理はありません。
+
+## 地面の穴（非採用理由と再発防止）
+
+[assets/terrain/pit.png](assets/terrain/pit.png) は、石・根・陰影と土の色が元の地面から浮くため非採用です。穴用PNGを周囲へ重ねる方式は外縁の切断線も目立つため、現行ゲームは共通の地面の色から穴の内側だけへ描画します。画像を再制作する場合も周囲との色差・外縁・狭い穴での表示を確認してください。現在の方式は [素材README](README.md#穴用素材) を参照してください。
+
+使用したプロンプト全文（`transparent_background: true`）：
+
+```text
+Use case: stylized-concept. Asset type: production PNG terrain sprite for a friendly 2D horizontal scrolling platform game. Create ONE dedicated grass-and-earth pit opening sprite, 1536 x 1024 landscape. It is a FRONT ORTHOGRAPHIC CROSS-SECTION of an open hole cut through a pale sandy beige ground, with a soft olive green grass fringe along ONLY the left and right banks at the very top. The left bank and right bank are vertical earthen walls dropping out of the bottom of the frame. Each bank occupies roughly the outermost 20 percent of the width; the middle 60 percent is the dark open shaft. Show a readable ragged cut edge, small embedded rounded pebbles, fine hanging roots and soil layers in warm ochre/tan/brown, with soft hand-painted shading and neat dark contour lines, matching a cute illustrated countryside game with violet rock props, blue sky and green tea fields. The outer sides of the banks blend into light beige #e8d9b8 soil. Depth grows darker downwards; the cavity is dark brown charcoal rather than a featureless flat black rectangle. No visible bottom, NO bottom ledge, NO bridge or grass across the opening, NO top-down ellipse, NO perspective landscape. Keep the horizontal middle simple so the sprite can be stretched horizontally in the game while the side bank slices retain their widths. The top surface baseline is around y=64 pixels, with a few grass tufts above it; make the strip above the banks genuinely transparent. The open middle below that surface is opaque dark depth, and it reaches the bottom edge. No padding around the sides or bottom: bank cross-sections touch those canvas edges. No text, labels, characters, UI, sky, scenery, border, shadows cast outside the sprite, watermarks, checkerboard background or multiple asset panels. This image is the final game terrain asset, not a concept scene.
+```

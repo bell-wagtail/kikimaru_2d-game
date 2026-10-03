@@ -1,0 +1,19 @@
+{
+  "name": "kikimaru-2d-game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "vite",
+    "check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "build": "npm run check && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": { "phaser": "3.90.0" },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "8.3.1"
+  }
+}
