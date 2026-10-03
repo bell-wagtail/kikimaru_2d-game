@@ -112,3 +112,26 @@ mise exec -- node --experimental-strip-types scripts/generate-audio.mjs
 ```powershell
 mise exec -- npm.cmd --cache .npm-cache run preview
 ```
+
+## GitHub Pagesの公開パスで確認する
+
+配信処理と公開パスの正本は [pages.yml](../.github/workflows/pages.yml)、GitHub上の公開・更新操作は [PUBLISH](PUBLISH.md) です。通常のビルドとは別の出力先を使って、プロジェクトURLのパスで確認します。
+
+```powershell
+mise exec -- npm.cmd --cache .npm-cache run build -- --base /kikimaru_2d-game/ --outDir ../dist/pages-preview
+mise exec -- npm.cmd --cache .npm-cache run preview -- --base /kikimaru_2d-game/ --outDir ../dist/pages-preview --port 4174
+```
+
+`http://127.0.0.1:4174/kikimaru_2d-game/` を開き、読み込み完了・開始待機・開始操作・移動・ジャンプ・音声・ミュート・クイズ・ゴール結果・再挑戦を確認します。開発用の `/@fs/` ページは配信用ビルドには含みません。ブラウザのネットワークで画像・WAV・JavaScript・CSSが正常に読み込め、404や実行エラーがないことも確認します。
+
+出力先を自動消去しないため、ローカルの同じ確認フォルダーには以前の生成物が残る場合があります。PagesはActionsの新しいチェックアウトから生成した `dist` だけを配信します。
+
+公開パス付きの開発サーバーでも既存の結合テストを実行できます。
+
+```powershell
+mise exec -- npm.cmd --cache .npm-cache run dev -- --base /kikimaru_2d-game/ --port 5174
+```
+
+テストURLは `/kikimaru_2d-game/@fs/<プロジェクトの絶対パス>/tests/scrolling.browser.html` です。WebGLと `?canvas` のそれぞれで `PASS 全項目完了` を確認します。これは開発用の検証で、Actionsで実行する検証は単体テストと型チェック付きビルドです。
+
+スマホ実機では公開URLで、表示の収まり、移動とジャンプの同時タッチ、開始・クイズ・結果のボタン、初回タッチ後の音声、バックグラウンドからの復帰を確認します。ブラウザの画面サイズ変更だけでは実機確認の代わりになりません。
