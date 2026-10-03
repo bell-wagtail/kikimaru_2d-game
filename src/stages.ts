@@ -7,6 +7,7 @@ import type { DecorationDefinition } from "./decorations";
 import { ITEM_TYPES } from "./items";
 import type { ItemDefinition, ItemKind } from "./items";
 import type { GroundHole } from "./ground";
+import type { StageEndpoint } from "./endpoints";
 import teaRiverMap from "./stage-maps/tea-river.txt?raw";
 import teaRiverTrailMap from "./stage-maps/tea-river-trail.txt?raw";
 
@@ -21,13 +22,15 @@ export interface StageDefinition {
   readonly items?: readonly ItemDefinition[];
   readonly decorations?: readonly DecorationDefinition[];
   readonly holes?: readonly GroundHole[];
+  readonly start?: StageEndpoint;
+  readonly goal?: StageEndpoint;
 }
 
 export const STAGE_MAP_GRID = {
   cellWidth: 60, cellHeight: 36, originX: 0, groundY: WORLD.ground
 } as const satisfies StageMapGrid;
 
-export const TRAIL_MAP_GRID = { ...STAGE_MAP_GRID, cellHeight: 32 } as const satisfies StageMapGrid;
+export const TRAIL_MAP_GRID = { ...STAGE_MAP_GRID } as const satisfies StageMapGrid;
 
 const teaRiverBackground = {
   assetKey: "background/tea_river_repeat_x", scrollFactor: 0.35, seamBlendPixels: 48
@@ -58,6 +61,19 @@ const propUrls = import.meta.glob<string>([
 ], {
   eager: true, query: "?url", import: "default"
 });
+
+const milestoneUrls = import.meta.glob<string>([
+  "./kikimaru-assets/assets/props/goal_flag.png",
+  "./kikimaru-assets/assets/character/right/head_happy.png",
+  "./kikimaru-assets/assets/character/front/sparkle.png"
+], { eager: true, query: "?url", import: "default" });
+
+export function milestoneAsset(key: string): { key: string; url: string } {
+  const asset = manifest.files.find(file => file.key === key);
+  const url = asset && milestoneUrls[`./kikimaru-assets/${asset.path}`];
+  if (!asset || !url) throw new Error(`開始・ゴール素材をmanifestに登録してください: ${key}`);
+  return { key: asset.key, url };
+}
 
 export function stageItems(stage: StageDefinition): readonly ItemDefinition[] {
   return [...(stage.items ?? []), ...(stage.decorations ?? [])];

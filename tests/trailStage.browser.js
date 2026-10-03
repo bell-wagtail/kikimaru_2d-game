@@ -94,7 +94,7 @@ export async function verifyTrailStage({ scene, key, step, restart, pass, assert
   await restart(stage); restored(); aligned();
   const children = scene.children.length, bodies = scene.physics.world.staticBodies.size;
   assert(quizzes.length === 3 && groundFruit.length > 0 && bonusItems.some(item => item.kind === "fish"), "地上の果物・高台のご褒美・3か所のクイズがある");
-  assert(elevated.every(rock => rock.y + rock.height < WORLD.ground - PLAYER.height), "高台の下にはキャラクターが歩ける高さがある");
+  assert(elevated.every(rock => rock.y + rock.height <= WORLD.ground - PLAYER.height), "高台の下にはキャラクターが歩ける高さがある");
   walkTo(bridge[0].x + bridge[0].width / 2); settle(bridge[0].y);
   walkTo(quizzes.at(-1).x + quizzes.at(-1).width + PLAYER.width); settle(WORLD.ground);
   assert(groundFruit.every(definition => item(definition).collected), "地上ルートで果物を集められる");
@@ -102,9 +102,18 @@ export async function verifyTrailStage({ scene, key, step, restart, pass, assert
   assert(quizzes.every(definition => item(definition).collected) && new Set(answeredIds).size === quizzes.length, "序盤・中盤・終盤で異なるクイズに挑戦");
   const collectedPoints = scene.items.items.filter(item => item.collected).reduce((sum, item) => sum + itemPoints(item.definition.kind), 0);
   near(scene.score.value, collectedPoints + quizzes.length * SCORE_RULES.quizCorrect, "通常ルートの得点");
+  let reachedGoal = false;
+  for (let frame = 0; frame < 300; frame++) {
+    key("ArrowRight", true); tick();
+    if (scene.playResult.current) { reachedGoal = true; break; }
+  }
+  stop();
+  assert(reachedGoal && scene.playResult.current.correctCount === quizzes.length && scene.playResult.current.unansweredCount === 0,
+    "地上ルートの続きでゴールへ歩いて到達し、全クイズの結果を確定");
+  near(scene.playResult.current.score, collectedPoints + quizzes.length * SCORE_RULES.quizCorrect, "実際に歩いて到達したゴールの得点");
   pass("寄り道ステージ：開始位置から地上ジャンプだけで穴と低い橋を越え、高台の下を歩き、果物と平地の3問を取得して終盤へ進む");
 
-  document.querySelector("#reset").click(); tick(); restored();
+  document.querySelector("#retry-walk").click(); document.querySelector("#start-walk").click(); tick(); restored();
   const shrimp = stage.items.find(item => item.kind === "shrimp");
   walkTo(shrimp.x + shrimp.width / 2); settle(WORLD.ground);
   assert(scene.powerUps.active("doubleJump"), "高台の手前でえびを取得");
@@ -121,14 +130,17 @@ export async function verifyTrailStage({ scene, key, step, restart, pass, assert
   for (const sign of [-1, 1]) {
     const shift = sign * REBASE_DISTANCE;
     const shifted = { ...stage,
+      start: { ...stage.start, x: stage.start.x + shift },
+      goal: { ...stage.goal, x: stage.goal.x + shift },
       obstacles: stage.obstacles.map(rock => ({ ...rock, x: rock.x + shift })),
       items: stage.items.map(item => ({ ...item, x: item.x + shift })),
       holes: stage.holes.map(hole => ({ ...hole, x: hole.x + shift })) };
     await restart(shifted);
+    const initialShift = scene.items.originX;
     scene.body.reset(WORLD.width / 2 + sign * (REBASE_DISTANCE + 10), WORLD.ground - PLAYER.height / 2);
     scene.previousPlayerX = scene.body.center.x;
     scene.update(0, 0); aligned();
-    near(scene.items.originX, shift, "新しい配置でも左右の座標補正を適用");
+    near(scene.items.originX, initialShift + shift, "開始時の補正に加えて左右の座標補正を適用");
     const mandarin = scene.items.items.find(item => item.definition.kind === "mandarin");
     scene.body.reset(mandarin.image.x, WORLD.ground - PLAYER.height / 2);
     scene.previousPlayerX = scene.body.center.x;

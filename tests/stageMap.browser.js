@@ -4,7 +4,8 @@ import { parseStageMap } from "../src/stageMap.ts";
 import { REBASE_DISTANCE } from "../src/scrolling.ts";
 import text from "./fixtures/stairs.txt?raw";
 
-const stairStage = { ...STAGES.teaRiver, ...parseStageMap(text, STAGE_MAP_GRID) };
+const baseStage = { id: "stage-map-test", background: STAGES.teaRiver.background };
+const stairStage = { ...baseStage, ...parseStageMap(text, STAGE_MAP_GRID) };
 
 export async function verifyStageMap({ scene, key, step, restart, pass, assert, near }) {
   const reset = () => { document.querySelector("#reset").click(); step(); };
@@ -79,7 +80,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
 
   for (const sign of [-1, 1]) {
     const grid = { ...STAGE_MAP_GRID, originX: sign * REBASE_DISTANCE };
-    await restart({ ...STAGES.teaRiver, ...parseStageMap(text, grid) });
+    await restart({ ...baseStage, ...parseStageMap(text, grid) });
     scene.body.reset(WORLD.width / 2 + sign * (REBASE_DISTANCE + 10), WORLD.ground - PLAYER.height / 2);
     scene.previousPlayerX = scene.body.center.x;
     step(); aligned();
@@ -97,7 +98,7 @@ export async function verifyStageMap({ scene, key, step, restart, pass, assert, 
   }
   pass("文字マップの原点変更、左右の座標補正、補正後の岩衝突、岩とteaのリセット");
 
-  await restart({ ...STAGES.teaRiver, ...parseStageMap(text, { ...STAGE_MAP_GRID, cellWidth: 80, cellHeight: 40 }) });
+  await restart({ ...baseStage, ...parseStageMap(text, { ...STAGE_MAP_GRID, cellWidth: 80, cellHeight: 40 }) });
   aligned();
   for (const { body } of scene.obstacles.items) { near(body.width, 80, "変更したマス幅"); near(body.height, 40, "変更したマス高さ"); }
   await restart(stairStage); aligned();
