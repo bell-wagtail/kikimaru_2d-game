@@ -1,6 +1,6 @@
 # 画像生成プロンプト
 
-生成方式：組み込みの image_gen。参照：本会話で採用したききまるの立体風デザイン。
+採用素材の再制作に使うプロンプトと、非採用・修正時の再発防止事項です。生成方式は組み込みの image_gen、キャラクターの参照はプロジェクトで採用したききまるの立体風デザインです。現行の素材仕様と採用状況は [素材README](README.md) を参照してください。
 
 ## 正面パーツ
 
@@ -37,9 +37,9 @@ Use case: illustration-story. Asset type: static wide 2D mobile platform game ba
 
 組み込み画像生成機能で、正面パーツシートを参照し、クリーム色・紫褐色の輪郭を保った単一の直線カプセル形の腕を生成。肘の曲がり、くびれ、指は省き、上下に丸い端を持つアルファ透過PNGを指定。画像の範囲を切り出し、正面・右向きのarm.pngに共用。
 
-## 横方向の反復用背景（2026-09-29）
+## 横方向の反復用背景
 
-生成・修正とも組み込み `image_gen` を使用。初稿は既存の `assets/backgrounds/tea_river.png` を画風・色合いの参照に指定。修正では初稿とその3枚連結画像を参照し、採用結果を `assets/backgrounds/tea_river_repeat_x.png` に保存。
+画風・色合いの参照は `assets/backgrounds/tea_river.png`、採用画像は `assets/backgrounds/tea_river_repeat_x.png` です。初稿には空の左右の明度差があり、そのまま反復すると縦の継ぎ目が出ました。修正では初稿と3枚連結画像を参照し、空の水平方向の色差を抑えるよう指定しています。
 
 ### 初稿
 
@@ -63,9 +63,9 @@ Preserve the original image's countryside composition, river, bridge, houses, te
 
 確認画像は PowerShell / System.Drawing で採用PNGを無加工・等倍で3枚並べ、連結境界の左右各384pxを切り出して作成。反転・補間・フェードによる継ぎ目の隠蔽は行っていません。採用PNG自体への後処理はありません。
 
-## 地面の穴（2026-10-01）
+## 地面の穴（非採用理由と再発防止）
 
-組み込みの画像生成ツール（imagegen）で新規生成し、[assets/terrain/pit.png](assets/terrain/pit.png) へ保存しました。参照画像を編集する形式ではなく、ゲーム画面を確認して色・構図を指定しています。上部のアルファ透過と実寸を確認しました。制作時はPNGを無加工で保存し、manifestの指定位置から左右の縁と中央のフレームを取り、中央部分だけを穴の幅に合わせて描画していました。現在の採用状況・描画方式は [素材README](README.md#穴用素材) を参照してください。
+[assets/terrain/pit.png](assets/terrain/pit.png) は、石・根・陰影と土の色が元の地面から浮くため非採用です。穴用PNGを周囲へ重ねる方式は外縁の切断線も目立つため、現行ゲームは共通の地面の色から穴の内側だけへ描画します。画像を再制作する場合も周囲との色差・外縁・狭い穴での表示を確認してください。現在の方式は [素材README](README.md#穴用素材) を参照してください。
 
 使用したプロンプト全文（`transparent_background: true`）：
 

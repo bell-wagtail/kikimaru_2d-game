@@ -6,7 +6,7 @@
 
 | 知りたいこと | 正本 |
 |---|---|
-| 現在の到達点・確認状況・未実装の構想 | [STATUS](docs/STATUS.md) |
+| 現在の到達点・確認状況・次セッションの2段階の依頼文 | [STATUS](docs/STATUS.md) |
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
 | 文字マップで岩・穴・アイテムの配置を編集する | [STAGES](docs/STAGES.md) |
