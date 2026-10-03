@@ -9,6 +9,7 @@
 | 現在の到達点・確認状況・次セッションの2段階の依頼文 | [STATUS](docs/STATUS.md) |
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
+| GitHub Pagesで公開・更新する | [PUBLISH](docs/PUBLISH.md) |
 | 文字マップで岩・穴・アイテム・スタート・ゴールの配置を編集する | [STAGES](docs/STAGES.md) |
 | 変更後に検証する | [CHECKS](docs/CHECKS.md) |
 | 素材の仕様・組み込み上の制約 | [素材README](src/kikimaru-assets/README.md) |
@@ -25,6 +26,7 @@
 | 解決済み依存関係・整合性情報 | [package-lock.json](package-lock.json) |
 | npmの導入方針 | [.npmrc](.npmrc) |
 | サーバー・ビルドの設定 | [vite.config.js](vite.config.js) |
+| GitHub Pagesの検証・手動配信・公開パス・Actions権限 | [pages.yml](.github/workflows/pages.yml) |
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
