@@ -9,12 +9,15 @@ import { rebaseBody, rebaseShift } from "../scrolling";
 import { FixedObstacles } from "../FixedObstacles";
 import { validateObstacles } from "../obstacles";
 import { StageItems } from "../StageItems";
-import { ITEM_TYPES, validateItems } from "../items";
+import { ITEM_TYPES, isPowerUpKind, validateItems } from "../items";
 import { PowerUpState } from "../powerUps";
 import { ItemFeedback } from "../ItemFeedback";
 import { SpeedLines } from "../SpeedLines";
 import { GROUND, StageGround } from "../StageGround";
 import { canLandOnGround } from "../ground";
+import { ScoreState, itemPoints } from "../score";
+import { QuizState } from "../quiz";
+import { QuizOverlay } from "../QuizOverlay";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -25,6 +28,10 @@ export class WalkScene extends Phaser.Scene {
   private controls = new InputState();
   private movementState = new MovementState();
   private powerUps = new PowerUpState();
+  private score = new ScoreState();
+  private quiz = new QuizState();
+  private quizOverlay!: QuizOverlay;
+  private focusPaused = false;
   private body!: Phaser.Physics.Arcade.Body;
   private actor!: Phaser.GameObjects.Container;
   private shadow!: Phaser.GameObjects.Ellipse;
@@ -32,6 +39,7 @@ export class WalkScene extends Phaser.Scene {
   private facing = 1;
   private phase = 0;
   private clock = 0;
+  private actorBob = 0;
   private loadFailed = false;
   private stageDefinition: StageDefinition = DEFAULT_STAGE;
   private scenery!: RepeatingScenery;
@@ -42,6 +50,7 @@ export class WalkScene extends Phaser.Scene {
   private ground!: StageGround;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
+  private scoreLabel = document.querySelector<HTMLElement>("#score")!;
 
   constructor() { super("walk"); }
 
@@ -52,10 +61,14 @@ export class WalkScene extends Phaser.Scene {
     this.facing = 1;
     this.phase = 0;
     this.clock = 0;
+    this.actorBob = 0;
+    this.focusPaused = false;
     this.previousPlayerX = WORLD.width / 2;
     this.controls.clear();
     this.movementState.reset();
     this.powerUps.reset();
+    this.score.reset();
+    this.quiz.reset();
   }
 
   preload(): void {
@@ -94,6 +107,9 @@ export class WalkScene extends Phaser.Scene {
     this.cameras.main.setScroll(0, 0);
     this.feedback = new ItemFeedback(this);
     this.speedLines = new SpeedLines(this);
+    this.quizOverlay = new QuizOverlay(index => this.answerQuiz(index), () => this.resumeQuiz());
+    this.updateScore();
+    this.physics.resume();
 
     this.makeApron();
     this.shadow = this.add.ellipse(WORLD.width / 2, WORLD.ground + 3, 94, 16, 0x58456a, 0.15);
@@ -119,15 +135,25 @@ export class WalkScene extends Phaser.Scene {
       return true;
     });
 
-    const unbind = bindControls(this.controls, () => this.resetPlayer());
-    const suspend = () => { this.controls.clear(); this.body.setVelocityX(0); this.speedLines.reset(); this.physics.pause(); };
-    const resume = () => { this.controls.clear(); this.physics.resume(); };
+    const unbind = bindControls(this.controls, () => this.resetPlayer(), () => !this.quiz.current && !this.focusPaused);
+    const suspend = () => {
+      this.focusPaused = true;
+      this.clearControls();
+      if (!this.quiz.current) { this.body.setVelocityX(0); this.speedLines.reset(); }
+      this.physics.pause();
+    };
+    const resume = () => {
+      this.focusPaused = false;
+      this.clearControls();
+      if (!this.quiz.current) this.physics.resume();
+    };
     this.game.events.on(Phaser.Core.Events.BLUR, suspend);
     this.game.events.on(Phaser.Core.Events.FOCUS, resume);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       unbind();
       this.game.events.off(Phaser.Core.Events.BLUR, suspend);
       this.game.events.off(Phaser.Core.Events.FOCUS, resume);
+      this.quizOverlay.destroy();
     });
 
     document.querySelector<HTMLElement>("#loading")!.hidden = true;
@@ -156,6 +182,11 @@ export class WalkScene extends Phaser.Scene {
     this.controls.clear();
     this.movementState.reset();
     this.powerUps.reset();
+    this.score.reset();
+    this.updateScore();
+    this.quiz.reset();
+    this.quizOverlay.close();
+    if (!this.focusPaused) this.physics.resume();
     this.feedback.reset();
     this.speedLines.reset();
     this.obstacles.reset();
@@ -172,8 +203,43 @@ export class WalkScene extends Phaser.Scene {
     this.animate(false, false, 0);
   }
 
+  private updateScore(): void {
+    const label = `${this.score.value}点`;
+    if (this.scoreLabel.textContent !== label) this.scoreLabel.textContent = label;
+  }
+
+  private clearControls(): void {
+    this.controls.clear();
+    for (const button of document.querySelectorAll("[data-action]")) button.classList.remove("pressed");
+  }
+
+  private beginQuiz(): void {
+    const question = this.quiz.begin();
+    if (!question) return;
+    this.clearControls();
+    this.physics.pause();
+    this.status.textContent = "クイズに挑戦中";
+    this.quizOverlay.show(question);
+  }
+
+  private answerQuiz(index: number): void {
+    const result = this.quiz.answer(index);
+    if (!result) return;
+    const actualChange = this.score.change(result.points);
+    this.updateScore();
+    this.quizOverlay.answered(result, actualChange, this.score.value);
+  }
+
+  private resumeQuiz(): void {
+    if (!this.quiz.finish()) return;
+    this.quizOverlay.close();
+    this.clearControls();
+    if (!this.focusPaused) this.physics.resume();
+    document.querySelector<HTMLElement>("#stage")!.focus({ preventScroll: true });
+  }
+
   update(_time: number, delta: number): void {
-    if (this.loadFailed || !this.body || this.physics.world.isPaused) return;
+    if (this.loadFailed || !this.body || this.quiz.current || this.focusPaused || this.physics.world.isPaused) return;
     if (this.body.top > GROUND.respawnTop) {
       this.resetPlayer();
       this.status.textContent = "ひとやすみ · Spaceでジャンプ";
@@ -194,8 +260,21 @@ export class WalkScene extends Phaser.Scene {
     this.feedback.advance(elapsed);
     const expired = this.powerUps.advance(elapsed);
     const acquired = this.items.collect(this.body);
-    for (const kind of acquired) this.powerUps.acquire(kind);
-    this.feedback.notify(acquired, expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect)));
+    for (const kind of acquired) {
+      if (isPowerUpKind(kind)) this.powerUps.acquire(kind);
+      this.score.change(itemPoints(kind));
+    }
+    this.updateScore();
+    this.feedback.notify(acquired.filter(kind => ITEM_TYPES[kind].type !== "quiz"),
+      expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect)));
+    if (acquired.some(kind => ITEM_TYPES[kind].type === "quiz")) {
+      this.alignActor();
+      const anchor = { x: this.actor.x, bottom: this.actor.y, width: this.body.width, height: this.body.height };
+      this.feedback.update(anchor, this.powerUps, 0);
+      this.speedLines.update(anchor, this.body.velocity.x, 0);
+      this.beginQuiz();
+      return;
+    }
     const contacts = this.obstacles.contacts(this.body);
     const groundContacts = this.ground.contacts(this.body);
     this.body.blocked.left ||= contacts.left || groundContacts.left;
@@ -217,12 +296,8 @@ export class WalkScene extends Phaser.Scene {
   private animate(walking: boolean, airborne: boolean, dt: number, pace = 1): void {
     this.clock += dt;
     this.phase = walking ? this.phase + dt * 12 * pace : 0;
-    const bob = airborne ? 0 : walking ? Math.abs(Math.sin(this.phase)) * 6 : Math.sin(this.clock * 2.5) * 2;
-    this.actor.setPosition(this.body.center.x, this.body.bottom - bob * PLAYER.scale);
-    this.actor.setScale(PLAYER.scale * this.facing, PLAYER.scale);
-    const height = Math.max(0, WORLD.ground - this.body.bottom);
-    this.shadow.setX(this.body.center.x).setScale(1 - Math.min(height / 500, 0.4)).setAlpha(1 - Math.min(height / 250, 0.6));
-    this.shadow.setVisible(this.body.bottom <= WORLD.ground && this.ground.hasFloorAt(this.body.center.x));
+    this.actorBob = airborne ? 0 : walking ? Math.abs(Math.sin(this.phase)) * 6 : Math.sin(this.clock * 2.5) * 2;
+    this.alignActor();
     for (const { layout, image } of this.parts) {
       let dx = 0, dy = 0, rotation = 0;
       if (layout.id.includes("foot")) {
@@ -240,5 +315,13 @@ export class WalkScene extends Phaser.Scene {
       image.setPosition(layout.x + layout.w * layout.pivot[0] - 200 + dx,
         layout.y + layout.h * layout.pivot[1] - rig.canvas.groundY + dy).setRotation(rotation);
     }
+  }
+
+  private alignActor(): void {
+    this.actor.setPosition(this.body.center.x, this.body.bottom - this.actorBob * PLAYER.scale);
+    this.actor.setScale(PLAYER.scale * this.facing, PLAYER.scale);
+    const height = Math.max(0, WORLD.ground - this.body.bottom);
+    this.shadow.setX(this.body.center.x).setScale(1 - Math.min(height / 500, 0.4)).setAlpha(1 - Math.min(height / 250, 0.6));
+    this.shadow.setVisible(this.body.bottom <= WORLD.ground && this.ground.hasFloorAt(this.body.center.x));
   }
 }

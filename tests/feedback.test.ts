@@ -1,15 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ITEM_TYPES } from "../src/items.ts";
+import { ITEM_TYPES, POWER_UP_KINDS } from "../src/items.ts";
 import { ITEM_FEEDBACK, ItemNoticeState, pulsePeriod } from "../src/feedback.ts";
 import { PowerUpState } from "../src/powerUps.ts";
 
 test("each acquired item has a named notice and an independently configurable circular glow", () => {
-  for (const item of Object.values(ITEM_TYPES)) {
+  for (const kind of POWER_UP_KINDS) {
+    const item = ITEM_TYPES[kind];
     assert.ok(item.name.length > 0 && /^#[0-9a-f]{6}$/i.test(item.glow.color));
     assert.ok(Number.isFinite(item.glow.diameterScale) && item.glow.diameterScale > 0);
   }
   assert.notEqual(ITEM_TYPES.tea.glow.diameterScale, ITEM_TYPES.shrimp.glow.diameterScale);
+});
+
+test("fish and fruits have named notices without power timers or glow definitions", () => {
+  for (const [kind, name] of [["fish", "魚"], ["mandarin", "みかん"], ["strawberry", "いちご"]] as const) {
+    const notices = new ItemNoticeState(); notices.acquired(kind);
+    assert.equal(notices.text, `${name}を取得！`);
+    assert.equal(ITEM_TYPES[kind].type, "score");
+    assert.equal("effect" in ITEM_TYPES[kind], false);
+    assert.equal("durationSeconds" in ITEM_TYPES[kind], false);
+    assert.equal("glow" in ITEM_TYPES[kind], false);
+  }
 });
 
 test("simultaneous notices stay readable and disappear after the configured interval", () => {

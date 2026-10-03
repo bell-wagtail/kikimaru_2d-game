@@ -8,6 +8,7 @@ import { ITEM_TYPES } from "./items";
 import type { ItemDefinition, ItemKind } from "./items";
 import type { GroundHole } from "./ground";
 import teaRiverMap from "./stage-maps/tea-river.txt?raw";
+import teaRiverTrailMap from "./stage-maps/tea-river-trail.txt?raw";
 
 export interface StageDefinition {
   readonly id: string;
@@ -26,15 +27,22 @@ export const STAGE_MAP_GRID = {
   cellWidth: 60, cellHeight: 36, originX: 0, groundY: WORLD.ground
 } as const satisfies StageMapGrid;
 
+export const TRAIL_MAP_GRID = { ...STAGE_MAP_GRID, cellHeight: 32 } as const satisfies StageMapGrid;
+
+const teaRiverBackground = {
+  assetKey: "background/tea_river_repeat_x", scrollFactor: 0.35, seamBlendPixels: 48
+} as const;
+
 export const STAGES = {
   teaRiver: {
     id: "tea-river",
-    background: {
-      assetKey: "background/tea_river_repeat_x",
-      scrollFactor: 0.35,
-      seamBlendPixels: 48
-    },
+    background: teaRiverBackground,
     ...parseStageMap(teaRiverMap, STAGE_MAP_GRID)
+  },
+  teaRiverTrail: {
+    id: "tea-river-trail",
+    background: teaRiverBackground,
+    ...parseStageMap(teaRiverTrailMap, TRAIL_MAP_GRID)
   }
 } as const satisfies Record<string, StageDefinition>;
 

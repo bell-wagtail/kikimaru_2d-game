@@ -1,5 +1,5 @@
 import type Phaser from "phaser";
-import { validateItems } from "./items";
+import { ITEM_TYPES, validateItems } from "./items";
 import type { ItemDefinition, ItemKind } from "./items";
 import type { Bounds } from "./obstacles";
 import { itemAsset } from "./stages";
@@ -22,14 +22,19 @@ export class StageItems {
 
   collect(player: Bounds): ItemKind[] {
     const acquired: ItemKind[] = [];
+    let quizCollected = false;
     for (const item of this.items) {
       if (item.collected) continue;
+      const quiz = ITEM_TYPES[item.definition.kind].type === "quiz";
+      // Overlapping markers each need their own answered question before being consumed.
+      if (quiz && quizCollected) continue;
       const bounds = item.image.getBounds();
       if (player.right <= bounds.left || player.left >= bounds.right ||
           player.bottom <= bounds.top || player.top >= bounds.bottom) continue;
       item.collected = true;
       item.image.setVisible(false);
       acquired.push(item.definition.kind);
+      quizCollected ||= quiz;
     }
     return acquired;
   }

@@ -64,9 +64,11 @@ test("bottom-row blanks form finite holes while blanks above the floor stay empt
     [{ id: "hole-c0", x: -200, width: 240 }]);
 });
 
-test("the editable stage remains valid without fixing its arrangement in regression tests", () => {
-  const text = readFileSync(new URL("../src/stage-maps/tea-river.txt", import.meta.url), "utf8");
-  assert.doesNotThrow(() => parseStageMap(text, grid));
+test("the editable stages remain valid without fixing their arrangements in regression tests", () => {
+  for (const filename of ["tea-river.txt", "tea-river-trail.txt"]) {
+    const text = readFileSync(new URL(`../src/stage-maps/${filename}`, import.meta.url), "utf8");
+    assert.doesNotThrow(() => parseStageMap(text, grid));
+  }
 });
 
 test("invalid cell sizes, nonfinite origins, and overflowing output coordinates are rejected", () => {
@@ -92,4 +94,16 @@ test("tea and shrimp symbols become items without altering rocks or holes at a c
   ]);
   assert.deepEqual(map.obstacles, [{ id: "rock-r0-c2", kind: "rock", x: -80, y: 510, width: 80, height: 40 }]);
   assert.deepEqual(map.holes, [{ id: "hole-c1", x: -160, width: 160 }]);
+});
+
+test("fish, fruits and quiz markers share map geometry and IDs without creating rocks or changing holes", () => {
+  const map = parseStageMap("FQMSx\n=....", { ...grid, originX: -240, cellWidth: 80, cellHeight: 40 });
+  assert.deepEqual(map.items, [
+    { id: "fish-r0-c0", kind: "fish", x: -240, y: 510, width: 80, height: 40 },
+    { id: "quiz-r0-c1", kind: "quiz", x: -160, y: 510, width: 80, height: 40 },
+    { id: "mandarin-r0-c2", kind: "mandarin", x: -80, y: 510, width: 80, height: 40 },
+    { id: "strawberry-r0-c3", kind: "strawberry", x: 0, y: 510, width: 80, height: 40 }
+  ]);
+  assert.equal(map.obstacles.length, 1);
+  assert.deepEqual(map.holes, [{ id: "hole-c1", x: -160, width: 320 }]);
 });

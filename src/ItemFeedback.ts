@@ -1,6 +1,6 @@
 import type Phaser from "phaser";
-import { ITEM_TYPES } from "./items";
-import type { ItemKind } from "./items";
+import { ITEM_TYPES, POWER_UP_KINDS } from "./items";
+import type { ItemKind, PowerUpKind } from "./items";
 import { ITEM_FEEDBACK, ItemNoticeState, pulsePeriod } from "./feedback";
 import type { PowerUpState } from "./powerUps";
 
@@ -14,10 +14,10 @@ export interface FeedbackAnchor {
 export class ItemFeedback {
   private readonly notices = new ItemNoticeState();
   private readonly message: Phaser.GameObjects.Text;
-  private readonly glows: { kind: ItemKind; image: Phaser.GameObjects.Image; phase: number }[] = [];
+  private readonly glows: { kind: PowerUpKind; image: Phaser.GameObjects.Image; phase: number }[] = [];
 
   constructor(scene: Phaser.Scene) {
-    for (const kind of Object.keys(ITEM_TYPES) as ItemKind[]) {
+    for (const kind of POWER_UP_KINDS) {
       const { color } = ITEM_TYPES[kind].glow;
       const key = `item-glow-${color}`;
       if (!scene.textures.exists(key)) {
@@ -51,8 +51,8 @@ export class ItemFeedback {
     for (const kind of expired) this.notices.expired(kind);
     for (const kind of acquired) {
       this.notices.acquired(kind);
-      const glow = this.glows.find(item => item.kind === kind)!;
-      glow.phase = 0;
+      const glow = this.glows.find(item => item.kind === kind);
+      if (glow) glow.phase = 0;
     }
   }
 

@@ -6,7 +6,7 @@
 
 | 知りたいこと | 正本 |
 |---|---|
-| 現在の到達点・確認状況・未実装の構想 | [STATUS](docs/STATUS.md) |
+| 現在の到達点・確認状況・次セッションの2段階の依頼文 | [STATUS](docs/STATUS.md) |
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
 | 文字マップで岩・穴・アイテムの配置を編集する | [STAGES](docs/STAGES.md) |
@@ -28,12 +28,16 @@
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
-| ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) |
-| 文字マップによる岩・穴・アイテムの配置 | [stage-maps/](src/stage-maps/) |
+| ステージごとの背景・スクロール倍率・継ぎ目補正・文字マップの対応／マス寸法／原点・座標指定 | [stages.ts](src/stages.ts) の `STAGES` / `STAGE_MAP_GRID` / `TRAIL_MAP_GRID` |
+| 文字マップによる岩・穴・アイテムの配置 | [現行マップ](src/stage-maps/tea-river.txt)・[寄り道マップ](src/stage-maps/tea-river-trail.txt) |
 | 文字マップの記号・座標への変換 | [stageMap.ts](src/stageMap.ts) |
 | アイテムの種類・素材キー・文字マップ記号・効果・持続時間・名前・発光色と大きさ | [items.ts](src/items.ts) の `ITEM_TYPES` |
 | プレイヤーの能力・残り時間 | [powerUps.ts](src/powerUps.ts) |
 | アイテムの表示・取得済み状態・取得判定・座標補正 | [StageItems.ts](src/StageItems.ts) |
+| スコアの初期値・上下限・能力付き／種類ごとの配点・クイズの正誤配点 | [score.ts](src/score.ts) の `SCORE_RULES` |
+| クイズの問題文・4択・正解・一文豆知識・出典URL | [quizData.ts](src/quizData.ts) の `QUIZ_QUESTIONS` |
+| 未出題からのランダム出題・一巡と出題履歴・選択肢の並べ替え・回答済み状態 | [quiz.ts](src/quiz.ts) |
+| クイズの選択肢・正誤と正解・点数変化・豆知識・再開ボタン | [QuizOverlay.ts](src/QuizOverlay.ts) |
 | 取得・終了通知の時間、終了前の明滅周期、発光の透明度・中心高さ | [feedback.ts](src/feedback.ts) の `ITEM_FEEDBACK` |
 | キャラクターに追従する円形発光・画面に固定する短い通知 | [ItemFeedback.ts](src/ItemFeedback.ts) |
 | ダッシュのスピード線の色・太さ・長さ・本数・流れる速さ | [dashFeedback.ts](src/dashFeedback.ts) の `DASH_FEEDBACK` |

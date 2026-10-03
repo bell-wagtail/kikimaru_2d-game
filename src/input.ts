@@ -39,7 +39,7 @@ export class InputState {
   }
 }
 
-export function bindControls(state: InputState, reset: () => void): () => void {
+export function bindControls(state: InputState, reset: () => void, enabled: () => boolean = () => true): () => void {
   const controller = new AbortController();
   const options = { signal: controller.signal };
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-action]")];
@@ -50,6 +50,7 @@ export function bindControls(state: InputState, reset: () => void): () => void {
   const clear = () => { state.clear(); refresh(); };
 
   window.addEventListener("keydown", event => {
+    if (!enabled()) return;
     const action = keyActions[event.code];
     if (!action || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true']")) return;
@@ -63,11 +64,11 @@ export function bindControls(state: InputState, reset: () => void): () => void {
   window.addEventListener("keyup", event => { state.release(`key:${event.code}`); refresh(); }, options);
   window.addEventListener("blur", clear, options);
   document.addEventListener("visibilitychange", clear, options);
-  stage.addEventListener("pointerdown", () => stage.focus({ preventScroll: true }), options);
+  stage.addEventListener("pointerdown", () => { if (enabled()) stage.focus({ preventScroll: true }); }, options);
 
   for (const button of buttons) {
     button.addEventListener("pointerdown", event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || !enabled()) return;
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
       state.press(`pointer:${event.pointerId}`, button.dataset.action as Action);
@@ -78,7 +79,7 @@ export function bindControls(state: InputState, reset: () => void): () => void {
     button.addEventListener("pointercancel", release, options);
     button.addEventListener("lostpointercapture", release, options);
     button.addEventListener("click", event => {
-      if (event.detail !== 0 || button.dataset.action !== "jump") return;
+      if (event.detail !== 0 || button.dataset.action !== "jump" || !enabled()) return;
       state.press("keyboard-button", "jump");
       state.release("keyboard-button");
       stage.focus({ preventScroll: true });
@@ -87,6 +88,7 @@ export function bindControls(state: InputState, reset: () => void): () => void {
   }
 
   document.querySelector<HTMLButtonElement>("#reset")!.addEventListener("click", () => {
+    if (!enabled()) return;
     clear();
     reset();
     stage.focus({ preventScroll: true });
