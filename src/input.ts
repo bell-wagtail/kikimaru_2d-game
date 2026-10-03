@@ -39,7 +39,8 @@ export class InputState {
   }
 }
 
-export function bindControls(state: InputState, reset: () => void, enabled: () => boolean = () => true): () => void {
+export function bindControls(state: InputState, reset: () => void, enabled: () => boolean = () => true,
+  resetEnabled: () => boolean = enabled): () => void {
   const controller = new AbortController();
   const options = { signal: controller.signal };
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-action]")];
@@ -88,7 +89,7 @@ export function bindControls(state: InputState, reset: () => void, enabled: () =
   }
 
   document.querySelector<HTMLButtonElement>("#reset")!.addEventListener("click", () => {
-    if (!enabled()) return;
+    if (!resetEnabled()) return;
     clear();
     reset();
     stage.focus({ preventScroll: true });

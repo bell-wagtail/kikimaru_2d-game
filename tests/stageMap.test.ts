@@ -6,6 +6,27 @@ import { validateDecorations } from "../src/decorations.ts";
 
 const grid = { cellWidth: 60, cellHeight: 36, originX: 0, groundY: 550 };
 
+test("I and G are distinct from strawberry and follow the grid and origin", () => {
+  const map = parseStageMap("I.S.G\n=====", { ...grid, originX: -240, cellWidth: 80, cellHeight: 40 });
+  assert.deepEqual(map.start, { x: -240, y: 510, width: 80, height: 40 });
+  assert.deepEqual(map.goal, { x: 80, y: 510, width: 80, height: 40 });
+  assert.equal(map.items[0].kind, "strawberry");
+  const legacy = parseStageMap("...\n===", grid);
+  assert.equal(legacy.start, undefined); assert.equal(legacy.goal, undefined);
+});
+
+test("duplicate endpoints and unsafe footing include the source location", () => {
+  assert.throws(() => parseStageMap("II\n==", grid), /1行2列.*複数指定/);
+  assert.throws(() => parseStageMap("GG\n==", grid), /1行2列.*複数指定/);
+  assert.throws(() => parseStageMap(".I.\n...", grid), /1行2列.*足元/);
+  assert.throws(() => parseStageMap(".G.\n=.=", grid), /1行2列.*足元/);
+  assert.throws(() => parseStageMap(".I.\n.x.\n===", grid), /足元/);
+  assert.throws(() => parseStageMap("xI.\n===", grid), /1行2列.*身体/);
+  const platform = parseStageMap(".I.G.\nxxxxx\n.....", grid);
+  assert.equal(platform.start!.y + platform.start!.height, platform.obstacles[0].y);
+  assert.throws(() => parseStageMap("I.\n==", { ...grid, originX: Number.MAX_VALUE, cellWidth: Number.MAX_VALUE }));
+});
+
 test("a text map places rocks from the ground upward and keeps tea separate from collision objects", () => {
   const map = parseStageMap(".o.\nxxx\n===", grid);
   assert.deepEqual(map.obstacles.map(({ x, y, width, height }) => ({ x, y, width, height })), [

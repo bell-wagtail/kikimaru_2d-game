@@ -11,6 +11,7 @@ import { verifyItemFeedback } from "./feedback.browser.js";
 import { verifySpeedLines } from "./speedLines.browser.js";
 import { verifyScoreQuiz } from "./scoreQuiz.browser.js";
 import { verifyTrailStage } from "./trailStage.browser.js";
+import { verifyEndpoints } from "./endpoints.browser.js";
 import { ITEM_TYPES } from "../src/items.ts";
 
 const game = new Phaser.Game({
@@ -22,7 +23,7 @@ const game = new Phaser.Game({
 });
 const output = document.querySelector("#results");
 const run = document.querySelector("#run");
-const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview], [data-fruit-preview], [data-trail-preview]")];
+const previewButtons = [...document.querySelectorAll("[data-feedback-preview], [data-speed-preview], [data-quiz-preview], [data-fruit-preview], [data-trail-preview], [data-goal-preview]")];
 let time = 0;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const near = (a, b, message) => assert(Math.abs(a-b) < 1e-6, `${message}: ${a} / ${b}`);
@@ -42,6 +43,33 @@ const ready = () => {
 };
 game.events.on("poststep", ready);
 
+document.querySelector("[data-goal-preview]").addEventListener("click", async () => {
+  run.disabled = true;
+  for (const button of previewButtons) button.disabled = true;
+  game.loop.stop();
+  const scene = game.scene.getScene("walk");
+  const recreated = new Promise(resolve => scene.events.once("create", resolve));
+  scene.scene.restart({ stage: {
+    id: "goal-preview", background: STAGES.teaRiver.background,
+    start: { x: 540, y: WORLD.ground - 36, width: 60, height: 36 },
+    goal: { x: 900, y: WORLD.ground - 36, width: 60, height: 36 },
+    items: ["tea", "shrimp", "mandarin", "strawberry", "quiz", "quiz", "quiz"].map((kind, index) => ({
+      id: `preview-${index}`, kind, x: index < 4 ? 720 : 1200 + index * 120,
+      y: WORLD.ground - 36, width: 60, height: 36
+    }))
+  } });
+  game.loop.start(game.step.bind(game)); await recreated; game.loop.stop();
+  document.querySelector("#start-walk").click();
+  scene.body.reset(750, WORLD.ground - PLAYER.height / 2); scene.update(0, 0);
+  const flag = scene.endpoints.goalFlag.getBounds();
+  scene.body.reset(flag.left - PLAYER.width / 2 + 1, WORLD.ground - PLAYER.height / 2); scene.update(0, 0);
+  render();
+  output.textContent = "ゴール結果のプレビュー。結果を閉じると、旗・喜びの表情・きらめきと能力の発光を確認できます。「もう一度」で指定スタートへ戻ります。";
+  run.disabled = false;
+  for (const button of previewButtons) button.disabled = false;
+  game.loop.start(game.step.bind(game));
+});
+
 for (const button of previewButtons.filter(button => button.hasAttribute("data-trail-preview"))) {
   button.addEventListener("click", async () => {
     run.disabled = true;
@@ -54,6 +82,7 @@ for (const button of previewButtons.filter(button => button.hasAttribute("data-t
     await recreated;
     game.loop.stop(); scene.physics.resume();
     if (button.dataset.trailPreview === "high") {
+      document.querySelector("#start-walk").click();
       const shrimp = STAGES.teaRiverTrail.items.find(item => item.kind === "shrimp");
       scene.body.reset(shrimp.x - PLAYER.width - 20, WORLD.ground - PLAYER.height / 2);
     }
@@ -191,14 +220,17 @@ run.addEventListener("click", async () => {
   scene.physics.resume();
   const lines = [];
   const pass = message => { lines.push(`PASS ${message}`); output.textContent = lines.join("\n"); };
-  const restart = async stage => {
+  const restart = async (stage, { autoStart = true } = {}) => {
     const recreated = new Promise(resolve => scene.events.once("create", resolve));
     scene.scene.restart({ stage });
     game.loop.start(game.step.bind(game));
     await recreated;
     game.loop.stop();
-    scene.physics.resume();
-    step();
+    if (autoStart) {
+      if (stage.start) document.querySelector("#start-walk").click();
+      scene.physics.resume();
+      step();
+    }
   };
   try {
     await restart({ ...STAGES.teaRiver, obstacles: [], items: [], decorations: [], holes: [] });
@@ -340,6 +372,7 @@ run.addEventListener("click", async () => {
     await verifySpeedLines({ scene, game, key, step, restart, pass, assert, near });
     await verifyScoreQuiz({ scene, game, key, step, restart, pass, assert, near });
     await verifyTrailStage({ scene, key, step, restart, pass, assert, near });
+    await verifyEndpoints({ scene, game, key, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);

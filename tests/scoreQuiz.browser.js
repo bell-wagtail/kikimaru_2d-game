@@ -97,11 +97,11 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
   assert(dialog().querySelector("#quiz-result").textContent.includes("-30点"), "不正解の減点を表示"); finish();
   reset(); collect("quiz"); answer(false); score(0);
   assert(dialog().querySelector("#quiz-result").textContent.includes("実際の増減 +0点"), "下限で実際の変化も表示"); finish();
-  reset(); scene.score.change(990); collect("quiz"); answer(true); score(1000);
+  reset(); scene.score.change(scene.score.maximum - 10); collect("quiz"); answer(true); score(scene.score.maximum);
   assert(dialog().querySelector("#quiz-result").textContent.includes("実際の増減 +10点"), "上限で実際の変化も表示"); finish();
-  collect("fish"); score(1000);
-  collect("mandarin"); collect("strawberry"); score(1000);
-  pass("不正解30点減点と豆知識、下限0・上限1000と上限下限での結果表示、再出題で前の解説を消去、全リセットで初期点と再挑戦");
+  collect("fish"); score(scene.score.maximum);
+  collect("mandarin"); collect("strawberry"); score(scene.score.maximum);
+  pass("不正解30点減点と豆知識、下限とMAP満点上限での結果表示、再出題で前の解説を消去、全リセットで初期点と再挑戦");
 
   reset(); collect("tea"); collect("shrimp");
   key("ArrowRight", true); key("ShiftLeft", true); scene.update(0, 0);
@@ -192,7 +192,7 @@ export async function verifyScoreQuiz({ scene, game, key, step, restart, pass, a
     }
     answer(true); finish();
   }
-  score(Math.min(SCORE_RULES.maximum, overlap.items.length * SCORE_RULES.quizCorrect));
+  score(overlap.items.length * SCORE_RULES.quizCorrect);
   pass("マス寸法変更・未回答での再起動・ダイアログ重複防止、問題数より多い重なるマーカーで2巡以上を重複なく出題");
 
   const firstId = QUIZ_QUESTIONS[0].id;

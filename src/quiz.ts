@@ -32,6 +32,8 @@ export function drawQuiz(random: () => number = Math.random, questions: readonly
 export class QuizState {
   current: QuizView | undefined;
   result: QuizResult | undefined;
+  answeredCount = 0;
+  correctCount = 0;
   private readonly questions: readonly QuizQuestion[];
   private readonly random: () => number;
   private remaining: readonly QuizQuestion[] = [];
@@ -62,6 +64,8 @@ export class QuizState {
     const correct = index === this.current.correctIndex;
     this.result = { correct, correctAnswer: this.current.choices[this.current.correctIndex],
       points: correct ? SCORE_RULES.quizCorrect : SCORE_RULES.quizIncorrect, explanation: this.current.explanation };
+    this.answeredCount++;
+    this.correctCount += Number(correct);
     return this.result;
   }
 
@@ -77,5 +81,7 @@ export class QuizState {
     this.result = undefined;
     this.remaining = [];
     this.lastQuestionId = undefined;
+    this.answeredCount = 0;
+    this.correctCount = 0;
   }
 }
