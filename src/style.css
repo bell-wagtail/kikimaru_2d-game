@@ -22,7 +22,6 @@ div#stage { width: 100%; aspect-ratio: 1200 / 650; touch-action: none; }
 .audio-panel input { width: 110px; accent-color: #85609b; }
 .audio-mute { min-height: 44px; padding: 8px 14px; border: 1px solid #ddd5e2; border-radius: 18px; color: #665270; background: #fffdf9; font-size: 12px; }
 .audio-status { color: #827887; }
-.milestone-dialog .audio-mute, #quiz-dialog > .audio-mute { display: block; width: auto; margin: 16px auto 0; min-height: 44px; padding: 8px 14px; font-size: 12px; font-weight: 400; background: #fffdf9; }
 @media (max-width: 700px) { .audio-panel { gap: 8px 12px; } .audio-panel input { width: 90px; } .audio-status { flex-basis: 100%; } }
 .milestone-dialog { width: min(440px, calc(100% - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 26px; border: 1px solid #d8c9ab; border-radius: 22px; color: #493c53; background: #fffdf6; box-shadow: 0 16px 48px #493c5333; text-align: center; }
 .milestone-dialog::backdrop { background: #30263e55; }

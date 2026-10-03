@@ -235,7 +235,7 @@ run.addEventListener("click", async () => {
     }
   };
   try {
-    await restart({ ...STAGES.teaRiver, obstacles: [], items: [], decorations: [], holes: [] });
+    await restart({ id: "scrolling-test", background: STAGES.teaRiver.background });
     document.querySelector("#reset").click();
     step();
     const frames = count => { for (let i = 0; i < count; i++) step(); };

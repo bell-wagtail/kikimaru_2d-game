@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { PLAYER, WORLD } from "../src/movement.ts";
-import { STAGES, stageItems } from "../src/stages.ts";
+import { STAGES, DEFAULT_STAGE, stageItems } from "../src/stages.ts";
 import { parseStageMap } from "../src/stageMap.ts";
 import { endpointPosition } from "../src/endpoints.ts";
 import { itemPoints, SCORE_RULES, stageTotals } from "../src/score.ts";
@@ -163,7 +163,7 @@ export async function verifyEndpoints({ scene, game, key, step, restart, pass, a
   await restart({ id: "legacy-endpoint-free", background: stage.background });
   near(scene.body.center.x, WORLD.width / 2, "未指定の座標ステージは従来位置");
   assert(!scene.starting && !scene.physics.world.isPaused && !scene.playResult.current, "未指定ステージは即開始して自由歩行");
-  assert(stageItems(STAGES.teaRiver).length === STAGES.teaRiver.items.length && !STAGES.teaRiver.start && !STAGES.teaRiver.goal,
+  assert(stageItems(STAGES.teaRiver).length === STAGES.teaRiver.items.length && DEFAULT_STAGE === STAGES.teaRiver,
     "ユーザー編集済みMAPと通常起動を維持");
   pass("岩足場のスタートとゴール、未指定の文字MAPと座標指定ステージの互換性、再起動時の状態とイベントの復元");
 }

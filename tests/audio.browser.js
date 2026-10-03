@@ -73,7 +73,7 @@ export async function verifyAudio({ scene, game, restart, step, pass, assert, ne
   session.cue("item");
   await wait(20);
   near(bank.sounds.get("item").volume, 0.23 * AUDIO_TRACKS.item.gain, "効果音の音量反映");
-  pass("独立した音量スライダーとゼロ音量、即時ミュートと解除、画面内ボタンへの設定反映");
+  pass("独立した音量スライダーとゼロ音量、通常画面のミュート一つで即時停止と解除");
 
   const analyser = game.sound.context.createAnalyser(); analyser.fftSize = 256;
   bgm.volumeNode.connect(analyser); bgm.seek = bgm.duration - 0.06;
@@ -102,7 +102,7 @@ export async function verifyAudio({ scene, game, restart, step, pass, assert, ne
   const oldAudio = scene.audio;
   await restart(stage, { autoStart: false }); await wait(30);
   assert(oldAudio.destroyed && !oldAudio.bank.sounds.size, "古い音源を全破棄");
-  assert(document.querySelectorAll(".audio-panel").length === 1 && document.querySelectorAll(".audio-mute").length === 4, "再起動で操作UIを増やさない");
+  assert(document.querySelectorAll(".audio-panel").length === 1 && document.querySelectorAll(".audio-mute").length === 1, "ミュートは通常画面の一つだけで再起動でも増やさない");
   assert(game.sound.sounds.filter(sound => !sound.pendingRemove).length === Object.keys(AUDIO_TRACKS).length, "音源の多重登録なし");
   near(scene.audio.session.preferences.bgm, 0.42, "再起動でもBGM音量保持"); near(scene.audio.session.preferences.effects, 0.23, "再起動でも効果音音量保持");
   oldAudio.session.setUnlocked(true); assert(!scene.audio.bank.sounds.get("walk").isPlaying, "古い非同期解放は新シーンを再生しない");
