@@ -35,6 +35,12 @@
 | スタート・ゴールの表示と接触・座標補正・専用演出の設定 | [stageEndpoints.ts](src/stageEndpoints.ts) |
 | 開始・結果・再挑戦の画面 | [MilestoneOverlay.ts](src/MilestoneOverlay.ts) |
 | ゴール結果の一度だけの確定と記録 | [playResult.ts](src/playResult.ts) |
+| 音源とゲームイベントの対応・長さ・相対音量・既定音量・BGMの曲長 | [audioDefinition.ts](src/audioDefinition.ts) |
+| オリジナル音源の楽譜・音色・音合成・ループ端処理・WAV形式 | [audioSynthesis.ts](src/audioSynthesis.ts) |
+| 音源の出自と再生成方針 | [音源README](src/audio-assets/README.md) |
+| 音声の開始・クイズ・ゴール・リセット・ミュート・フォーカスの再生方針 | [audioSession.ts](src/audioSession.ts) |
+| 音源読み込み・Phaser再生・初回操作の解放・再生失敗とシーン終了の処理 | [WalkAudio.ts](src/WalkAudio.ts) |
+| 音量・ミュートの操作画面 | [AudioControls.ts](src/AudioControls.ts) |
 | アイテムの種類・素材キー・文字マップ記号・効果・持続時間・名前・発光色と大きさ | [items.ts](src/items.ts) の `ITEM_TYPES` |
 | プレイヤーの能力・残り時間 | [powerUps.ts](src/powerUps.ts) |
 | アイテムの表示・取得済み状態・取得判定・座標補正 | [StageItems.ts](src/StageItems.ts) |
@@ -56,6 +62,7 @@
 
 - `src/`：現行ゲーム。入口は `index.html` → `main.ts`。`scenes/` はPhaserのシーン。
 - `src/stage-maps/`：ステージごとの文字マップ。
+- `src/audio-assets/`：このゲーム用に合成したBGM・効果音。`scripts/generate-audio.mjs` で再生成します。
 - `src/kikimaru-assets/`：現行コードが参照する素材と仕様。
 - `tests/`：入力・移動・地形・アイテム・演出の単体テストと、Phaser上の結合テスト。
 - `docs/`：上記の目的別文書。

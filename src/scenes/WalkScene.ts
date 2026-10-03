@@ -22,6 +22,8 @@ import { endpointPosition, validateEndpoint } from "../endpoints";
 import { StageEndpoints, MILESTONE_FEEDBACK } from "../stageEndpoints";
 import { PlayResultState } from "../playResult";
 import { MilestoneOverlay } from "../MilestoneOverlay";
+import { preloadAudio, WalkAudio } from "../WalkAudio";
+import { AUDIO_CUES } from "../audioDefinition";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -37,6 +39,7 @@ export class WalkScene extends Phaser.Scene {
   private quizOverlay!: QuizOverlay;
   private playResult = new PlayResultState({ maximumScore: 0, quizCount: 0 });
   private milestoneOverlay!: MilestoneOverlay;
+  private audio!: WalkAudio;
   private endpoints!: StageEndpoints;
   private starting = false;
   private respawnSeconds = 0;
@@ -87,13 +90,15 @@ export class WalkScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const onLoadError = () => {
+    const onLoadError = (file: Phaser.Loader.File) => {
+      if (file.type === "audio") return;
       this.loadFailed = true;
       document.querySelector<HTMLElement>("#loading")!.textContent = "画像を読み込めませんでした。開発サーバーを起動して再読み込みしてください。";
       this.status.textContent = "画像の読み込みエラー";
     };
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, onLoadError));
+    preloadAudio(this);
     const background = backgroundAsset(this.stageDefinition);
     this.load.image(background.key, background.url);
     const obstacles = this.stageDefinition.obstacles ?? [];
@@ -135,6 +140,7 @@ export class WalkScene extends Phaser.Scene {
     this.speedLines = new SpeedLines(this);
     this.quizOverlay = new QuizOverlay(index => this.answerQuiz(index), () => this.resumeQuiz());
     this.milestoneOverlay = new MilestoneOverlay(() => this.startWalk(), () => this.resetPlayer());
+    this.audio = new WalkAudio(this);
     this.updateScore();
     this.physics.resume();
 
@@ -167,12 +173,14 @@ export class WalkScene extends Phaser.Scene {
       () => !this.quiz.current && !this.focusPaused);
     const suspend = () => {
       this.focusPaused = true;
+      this.audio.focus(false);
       this.clearControls();
       if (!this.quiz.current && !this.starting && !this.playResult.current) { this.body.setVelocityX(0); this.speedLines.reset(); }
       this.physics.pause();
     };
     const resume = () => {
       this.focusPaused = false;
+      this.audio.focus(true);
       this.clearControls();
       if (!this.quiz.current && !this.starting && !this.playResult.current) this.physics.resume();
     };
@@ -184,6 +192,7 @@ export class WalkScene extends Phaser.Scene {
       this.game.events.off(Phaser.Core.Events.FOCUS, resume);
       this.quizOverlay.destroy();
       this.milestoneOverlay.destroy();
+      this.audio.destroy();
     });
 
     document.querySelector<HTMLElement>("#loading")!.hidden = true;
@@ -251,6 +260,8 @@ export class WalkScene extends Phaser.Scene {
       this.status.textContent = "ひとやすみ · Spaceでジャンプ";
       if (!this.focusPaused) this.physics.resume();
     }
+    this.audio.session.reset(this.starting);
+    this.audio.refresh();
   }
 
   private startWalk(): void {
@@ -262,6 +273,7 @@ export class WalkScene extends Phaser.Scene {
     this.clearControls();
     this.status.textContent = "ひとやすみ · Spaceでジャンプ";
     if (!this.focusPaused) this.physics.resume();
+    this.audio.session.start(); this.audio.refresh();
     document.querySelector<HTMLElement>("#stage")!.focus({ preventScroll: true });
   }
 
@@ -292,6 +304,7 @@ export class WalkScene extends Phaser.Scene {
     this.physics.pause();
     this.status.textContent = "クイズに挑戦中";
     this.quizOverlay.show(question);
+    this.audio.session.quiz(); this.audio.refresh();
   }
 
   private answerQuiz(index: number): void {
@@ -300,6 +313,8 @@ export class WalkScene extends Phaser.Scene {
     const actualChange = this.score.change(result.points);
     this.updateScore();
     this.quizOverlay.answered(result, actualChange, this.score.value);
+    this.audio.session.cue(result.correct ? AUDIO_CUES.correct : AUDIO_CUES.incorrect);
+    this.audio.refresh();
   }
 
   private resumeQuiz(): void {
@@ -307,6 +322,7 @@ export class WalkScene extends Phaser.Scene {
     this.quizOverlay.close();
     this.clearControls();
     if (this.pendingGoal && this.processContacts()) return;
+    this.audio.session.resumeWalk(); this.audio.refresh();
     if (!this.focusPaused) this.physics.resume();
     document.querySelector<HTMLElement>("#stage")!.focus({ preventScroll: true });
   }
@@ -360,8 +376,12 @@ export class WalkScene extends Phaser.Scene {
       this.score.change(itemPoints(kind));
     }
     this.updateScore();
-    this.feedback.notify(acquired.filter(kind => ITEM_TYPES[kind].type !== "quiz"),
-      expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect)));
+    const pickups = acquired.filter(kind => ITEM_TYPES[kind].type !== "quiz");
+    const ended = expired.filter(kind => !this.powerUps.active(ITEM_TYPES[kind].effect));
+    this.feedback.notify(pickups, ended);
+    if (pickups.length) this.audio.session.cue(AUDIO_CUES.pickup);
+    if (ended.length) this.audio.session.cue(AUDIO_CUES.powerEnd);
+    if (pickups.length || ended.length) this.audio.refresh();
     const goalContact = this.endpoints.touchesGoal(this.body);
     const quizContact = acquired.some(kind => ITEM_TYPES[kind].type === "quiz");
     if (!quizContact && !goalContact && !this.pendingGoal) return false;
@@ -392,6 +412,7 @@ export class WalkScene extends Phaser.Scene {
     this.endpoints.celebrate(this.actor.x, this.actor.y, this.body.height);
     this.status.textContent = "ゴール！ おつかれさま";
     this.milestoneOverlay.showResult(result);
+    this.audio.session.goal(); this.audio.refresh();
   }
 
   private animate(walking: boolean, airborne: boolean, dt: number, pace = 1): void {

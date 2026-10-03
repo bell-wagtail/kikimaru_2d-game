@@ -12,12 +12,13 @@ import { verifySpeedLines } from "./speedLines.browser.js";
 import { verifyScoreQuiz } from "./scoreQuiz.browser.js";
 import { verifyTrailStage } from "./trailStage.browser.js";
 import { verifyEndpoints } from "./endpoints.browser.js";
+import { verifyAudio } from "./audio.browser.js";
 import { ITEM_TYPES } from "../src/items.ts";
 
 const game = new Phaser.Game({
   type: new URLSearchParams(location.search).has("canvas") ? Phaser.CANVAS : Phaser.WEBGL,
   parent: "stage", width: WORLD.width, height: WORLD.height, banner: false,
-  audio: { noAudio: true },
+  audio: { noAudio: new URLSearchParams(location.search).has("noaudio") },
   physics: { default: "arcade", arcade: { gravity: { x: 0, y: PLAYER.gravity }, fixedStep: true, fps: 60 } },
   scene: [WalkScene]
 });
@@ -218,6 +219,7 @@ run.addEventListener("click", async () => {
   game.loop.stop();
   const scene = game.scene.getScene("walk");
   scene.physics.resume();
+  scene.audio.session.setMuted(true);
   const lines = [];
   const pass = message => { lines.push(`PASS ${message}`); output.textContent = lines.join("\n"); };
   const restart = async (stage, { autoStart = true } = {}) => {
@@ -373,6 +375,7 @@ run.addEventListener("click", async () => {
     await verifyScoreQuiz({ scene, game, key, step, restart, pass, assert, near });
     await verifyTrailStage({ scene, key, step, restart, pass, assert, near });
     await verifyEndpoints({ scene, game, key, step, restart, pass, assert, near });
+    await verifyAudio({ scene, game, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();
     pass(`全項目完了（${game.renderer.type === Phaser.CANVAS ? "Canvas" : "WebGL"}）`);

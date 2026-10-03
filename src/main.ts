@@ -9,7 +9,6 @@ new Phaser.Game({
   height: WORLD.height,
   backgroundColor: "#dce8d6",
   banner: false,
-  audio: { noAudio: true },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: {
     default: "arcade",
