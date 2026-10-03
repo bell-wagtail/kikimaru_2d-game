@@ -2,6 +2,8 @@
 
 既存のパーツ素材を使った、Phaser＋TypeScript＋Viteの2Dブラウザゲームです。
 
+公開版：[ききまるのおさんぽで遊ぶ](https://bell-wagtail.github.io/kikimaru_2d-game/)。公開・更新方法は [PUBLISH](docs/PUBLISH.md) を参照してください。
+
 ## 目的別の入口
 
 | 知りたいこと | 正本 |
