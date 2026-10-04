@@ -43,6 +43,8 @@ git-setup/
 ├── gh-enable-push-protection-win.bat # Windows用 GitHub Ruleset / Push protection / Auto-merge 有効化スクリプト
 ├── gh-enable-push-protection-mac.sh  # Mac用 GitHub Ruleset / Push protection / Auto-merge 有効化スクリプト
 ├── gh-RequiredCI.json                # developブランチ用 Ruleset 定義
+├── gh-main-protection.json            # mainブランチ保護の設定値
+├── gh-protect-main-win.bat             # main保護を本人が反映・確認するWindows用スクリプト
 ├── hooks/            # commit-msg などの共通Git hooksを管理するディレクトリ
 ├── setup-win.bat     # Windows用セットアップスクリプト
 └── setup-mac.sh      # Mac用セットアップスクリプト
@@ -87,6 +89,20 @@ chmod +x git-setup/hooks/<hook-name>
 - setup 実行済みでも、hook 追加後は `git-setup/check-setup-mac.sh` または `git-setup/check-setup-win.bat` で設定状態を再確認する。
 
 ## GitHub CLI
+
+### mainブランチの保護
+
+対象は `bell-wagtail/kikimaru_2d-game` の `main` です。[`gh-main-protection.json`](gh-main-protection.json) にGitHubへ送る設定を残し、[`gh-protect-main-win.bat`](gh-protect-main-win.bat) がそのファイルを読み込みます。今回実行するのはこのバッチです。別用途の `gh-enable-push-protection-win.bat` はAuto-mergeなど他の設定も変更します。Agentは設定を反映しません。ユーザーがバッチをダブルクリックし、表示された内容を確認して `Y` を選んだときだけGitHubへ送ります。既存の保護設定やRulesetが見つかった場合は上書きせず停止します。
+
+実行前にGitHub CLIを `bell-wagtail` で認証してください。保護設定は、リポジトリの書き込み権限者が `bell-wagtail` と `in0ho1no` の2アカウントだけで、`in0ho1no` の権限が `write` であることを確認してから反映します。現在はこの2アカウントへの権限付与を読み取り確認済みです。アカウントの所有者はユーザーが確認してください。`/check` を引数に付けると反映前の読み取り確認、`/verify` では反映後の設定値確認だけを行います。
+
+設定内容は、PR経由の更新、別アカウントによる承認、最新の変更後の承認し直し、未解決の会話の解消、GitHub Actionsが出した `build` チェックの成功です。`build` は最新の `main` を含む状態で通す必要があります。管理者も条件を守り、強制pushとブランチ削除を禁止します。これまでのマージコミットを使う履歴は維持できます。承認件数などの設定値はJSONが正本です。既存の `build` チェック名と発行元をPRのActions実績で確認しています。
+
+2026-10-04の初回実行は、必須チェックに `contexts` と `checks` を同時指定したためGitHub APIがHTTP 422で拒否しました。保護設定は作成されていません。JSONは公式API例と同じ `contexts` 形式へ修正しました。GitHubは直近のチェック発行元を関連付ける仕様なので、適用後の `/verify` 出力で `build` の発行元がGitHub Actionsか確認します。JSONを既にステージした場合、修正版をコミット前に再ステージしてください。
+
+リリースPRは `bell-wagtail` が作成・最後にpushし、`in0ho1no` が承認します。GitHubはPR作成者自身の承認を認めず、必須承認に数えるのは書き込み権限者です。保護設定そのものはレビュアーの名前を固定しないため、将来の共同作業者追加時には保護方針も見直してください。現行のSecurity Scanは `develop` のみが対象です。`main` 向けPRのスキャン必須化は、Pages自動配信を有効にする前に追加確認します。
+
+実行後はバッチに表示される設定値とGitHubのSettings → Branchesを確認し、Agentには確認のみを依頼できます。このバッチはGitのコミット・push・マージ、Pagesの配信、GitHubアカウントの追加を行いません。GitHubの設定仕様は [ブランチ保護のAPI](https://docs.github.com/en/rest/branches/branch-protection) と [必須レビュー](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches) を参照してください。
 
 ### 本体のインストール
 

@@ -30,6 +30,7 @@
 | npmの導入方針 | [.npmrc](.npmrc) |
 | サーバー・ビルドの設定 | [vite.config.js](vite.config.js) |
 | GitHub Pagesの検証・手動配信・公開パス・Actions権限 | [pages.yml](.github/workflows/pages.yml) |
+| `main` の保護設定案・ユーザー実行用コマンド | [保護設定JSON](git-setup/gh-main-protection.json)・[Windowsバッチ](git-setup/gh-protect-main-win.bat) |
 | 画像パス・実寸・切り出し情報 | [manifest.json](src/kikimaru-assets/manifest.json) |
 | キャラクターの配置・描画順・初期色 | [rig-layout.json](src/kikimaru-assets/rig-layout.json) |
 | 移動・ジャンプの定数 | [movement.ts](src/movement.ts) |
