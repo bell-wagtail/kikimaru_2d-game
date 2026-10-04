@@ -4,7 +4,7 @@ import type { StageDefinition } from "./stages";
 import { endpointPosition } from "./endpoints";
 import { PLAYER } from "./movement";
 
-export const MILESTONE_FEEDBACK = { respawnSeconds: 0.75, flagWidthScale: 3, flagHeightScale: 6, labelGap: 8 } as const;
+export const MILESTONE_FEEDBACK = { respawnSeconds: 0.75, flagWidthScale: 2.4, flagHeightScale: 4.8, labelGap: 8 } as const;
 
 export class StageEndpoints {
   private originX = 0;
