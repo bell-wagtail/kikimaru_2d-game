@@ -13,6 +13,7 @@ import { verifyScoreQuiz } from "./scoreQuiz.browser.js";
 import { verifyTrailStage } from "./trailStage.browser.js";
 import { verifyEndpoints } from "./endpoints.browser.js";
 import { verifyAudio } from "./audio.browser.js";
+import { verifyWalls } from "./walls.browser.js";
 import { ITEM_TYPES } from "../src/items.ts";
 
 const game = new Phaser.Game({
@@ -375,6 +376,7 @@ run.addEventListener("click", async () => {
     await verifyScoreQuiz({ scene, game, key, step, restart, pass, assert, near });
     await verifyTrailStage({ scene, key, step, restart, pass, assert, near });
     await verifyEndpoints({ scene, game, key, step, restart, pass, assert, near });
+    await verifyWalls({ scene, key, step, restart, pass, assert, near });
     await verifyAudio({ scene, game, step, restart, pass, assert, near });
     await restart(STAGES.teaRiver);
     step(); render();

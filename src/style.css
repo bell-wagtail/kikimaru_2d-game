@@ -11,6 +11,7 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 #reset:hover { background: #ede7f1; }
 button:focus-visible, #stage:focus-visible { outline: 3px solid #85609b; outline-offset: 4px; }
 .scene { position: relative; overflow: hidden; border: 1px solid #ddd9cc; border-radius: 22px; background: #dce8d6; box-shadow: 0 16px 40px #493c530b; }
+.scene, .scene *, button, button * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 canvas { display: block; width: 100%; height: auto; }
 div#stage { width: 100%; aspect-ratio: 1200 / 650; touch-action: none; }
 .scene-label { position: absolute; top: 20px; left: 22px; display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 22px; background: #fffdf2eb; font-size: 12px; pointer-events: none; }
@@ -48,7 +49,7 @@ div#stage { width: 100%; aspect-ratio: 1200 / 650; touch-action: none; }
 #loading { position: absolute; inset: 0; margin: 0; display: grid; place-content: center; padding: 20px; background: #f7f5efed; text-align: center; z-index: 2; }
 #loading[hidden] { display: none; }
 .touch-controls { position: absolute; bottom: 18px; left: 22px; display: flex; gap: 12px; }
-.touch-controls button { width: 58px; height: 52px; border: 1px solid #ffffffcc; border-radius: 15px; color: #64506f; background: #fffdf3e8; box-shadow: 0 3px 0 #c7b9a8; font-size: 29px; touch-action: none; user-select: none; }
+.touch-controls button { width: 58px; height: 52px; border: 1px solid #ffffffcc; border-radius: 15px; color: #64506f; background: #fffdf3e8; box-shadow: 0 3px 0 #c7b9a8; font-size: 29px; touch-action: none; }
 .touch-controls button.pressed { background: #d9c9e7; transform: translateY(2px); box-shadow: 0 1px 0 #c7b9a8; }
 .jump-control { left: auto; right: 22px; }
 .jump-control button { width: 84px; background: #e8ddefed; font-size: 12px; font-weight: 700; }

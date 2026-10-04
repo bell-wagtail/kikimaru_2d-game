@@ -1,4 +1,6 @@
-# 環境構築
+# Git・セキュリティ検査の補助環境
+
+既存のGit・セキュリティ検査用スクリプトの案内です。ゲームの実行環境は [SETUP](../docs/SETUP.md)、Agentの実行範囲は [作業合意](../.github/copilot-instructions.md) を参照してください。操作手順の記載だけでは、環境設定・Git操作・公開の実行依頼にはなりません。
 
 ## Git セットアップ
 
@@ -63,7 +65,7 @@ Git hooks を追加・変更する場合は `git-setup/hooks` を編集する。
 `gh-enable-push-protection-win.bat` / `gh-enable-push-protection-mac.sh` を実行して有効化する(gh CLI と管理者権限が必要)。同名の RequiredCI Ruleset が存在する場合は更新される。
 このスクリプトはあわせて GitHub の `allow_auto_merge` と `allow_squash_merge` も有効化するため、限定された更新 PR に対して auto-merge を使える前提も整う。
 `delete_branch_on_merge` も有効化するため、PR がマージされた head ブランチは自動削除される(未マージのブランチには影響しない。削除されたブランチは GitHub 上から復元可能)。
-このテンプレートでは [ .github/workflows/auto-merge-security-tool-updates.yml ](.github/workflows/auto-merge-security-tool-updates.yml) により、GitHub が付与する PR メタデータ上で `dependabot[bot]` が作成した PR であり、変更ファイルが `docker/semgrep/Dockerfile` または `docker/gitleaks/Dockerfile` のみである場合に限って auto-squash merge を予約する。
+このテンプレートでは [ .github/workflows/auto-merge-security-tool-updates.yml ](../.github/workflows/auto-merge-security-tool-updates.yml) により、GitHub が付与する PR メタデータ上で `dependabot[bot]` が作成した PR であり、変更ファイルが `docker/semgrep/Dockerfile` または `docker/gitleaks/Dockerfile` のみである場合に限って auto-squash merge を予約する。
 ブランチ名、PR タイトル、ラベルのような偽装しやすい情報には依存していないため、通常の手作業 PR や他の Dependabot PR が誤って自動マージ対象になることは避けている。
 ただし、実際のマージは RequiredCI Ruleset などの必須チェックを通過した後にのみ行われる。
 また、auto-merge 予約後に条件を満たさない変更が push された場合は、同ワークフローが予約済みの auto-merge を解除する。
