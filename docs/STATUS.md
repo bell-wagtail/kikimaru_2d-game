@@ -17,7 +17,9 @@
 - 最新のゲーム変更時（ゴール旗縮小）に、miseの導入済み環境で単体テスト89件・型チェック付きビルド・音声有効のWebGL／Canvas各92項目が成功しました。ゴール接触・結果・座標補正・全リセット、左右壁・寄り道ルート・能力・クイズ・音の回帰検証と、旗・ラベル・表情・能力発光の表示を含みます。ブラウザのエラー・警告はありませんでした。
 - 長押し抑制はゲーム画面・操作ボタン・子要素へ適用し、クイズ本文・説明文の選択とページ全体の拡大を維持する計算済みCSSを確認しました。実機の拡大鏡抑制は下記の未確認事項です。
 - 2026-10-03にGitHub Pagesの初回配信と公開URLの表示・素材取得を確認しました。2026-10-04にユーザーがiOSのChromeで公開URLへのアクセスとゲームの基本動作を確認しています。公開先は [ききまるのおさんぽ](https://bell-wagtail.github.io/kikimaru_2d-game/)、更新方法は [PUBLISH](PUBLISH.md) です。
-- 2026-10-04、ユーザーがワークフローの手動実行で更新されることを確認しました。Agentも [最新配信の成功](https://github.com/bell-wagtail/kikimaru_2d-game/actions/runs/37176850715) と、公開ページが開始待機まで読み込めること、ブラウザのエラー・警告がないことを確認しました。配信対象は `4a2ca3b` です。
+- 2026-10-04、ユーザーがワークフローの手動実行で更新されることを確認しました。Agentも [当時の配信の成功](https://github.com/bell-wagtail/kikimaru_2d-game/actions/runs/37176850715) と、公開ページが開始待機まで読み込めること、ブラウザのエラー・警告がないことを確認しました。配信対象は `4a2ca3b` です。
+- 2026-10-04、Pagesの自動配信をローカルで準備しました。`main` PRのSecurity Scan・依存監査・テスト・型チェック付きビルドを必須の `build` チェックに連動させ、`main` へのpushで同じ検査後に配信します。手動実行は復旧用に維持し、`main` 以外は配信しません。既存のmise環境で単体テスト89件・配信用ビルド・`npm audit`（既知脆弱性0件）が成功しました。ゲームの実装変更がないためWebGL／Canvasは再実行していません。
+- GitHub APIの読み取りで、`main` の必須 `build` チェック・承認1件・最新push後の再承認・管理者への適用・強制push／削除禁止、PagesのActions配信元と `github-pages` 環境の `main` 限定を再確認しました。[直近のSecurity Scan](https://github.com/bell-wagtail/kikimaru_2d-game/actions/runs/37180544105) も `develop` で成功しています。GitHub設定は変更していません。
 
 長距離の結合テストは物理更新を高速に進めた検証で、端末性能や実時間の長期プレイの測定ではありません。音の実再生検査はデスクトップのWeb Audioで、スピーカーの聴感評価とは区別しています。型チェック付きビルドにはPhaserチャンクサイズの既存警告があります。
 
@@ -29,22 +31,21 @@
 |---|---|
 | iOSの長押し抑制 | 更新配信後に、文字選択・長押しメニュー・拡大鏡がゲーム画面と操作ボタンで抑制されるかをユーザーが確認する予定です |
 | iOSの個別操作・音声 | 同時タッチ、初回タッチでの音声解放、バックグラウンド／音声中断からの復帰、実機スピーカー、HTML5 Audioへのフォールバックは個別には未確認です |
-| Security Scanの再確認 | `min-release-age` 未設定の指摘に対し、ユーザーの依頼で [`.npmrc`](../.npmrc) を修正しました。既存依存・ロックファイルは維持しています。変更をGitHubへ反映した後のCI結果は未確認です |
-| Pages自動配信の準備 | `main` の保護は2026-10-04にユーザーが [設定バッチとJSON](../git-setup/README.md#mainブランチの保護) で適用しました。初回のHTTP 422を修正した再実行後、AgentはGitHub APIを読み取り、`main` が保護済みであること、GitHub Actions発行の `build`、最新状態のチェック、承認1件・最新push後の再承認、管理者への適用、強制push・削除禁止、会話解決を確認しました。書き込み権限者は `bell-wagtail` と `in0ho1no` です。Pages自動配信は次の依頼で扱います |
+| Pages自動配信の実動作 | ワークフローのローカル編集と検証は完了しました。変更を保護された経路で `main` へ反映した後、PRの必須 `build` と `main` push時の `security`・`build`・`deploy` をGitHub Actionsで確認してください。現時点では新構成のCI実行・自動配信は未確認です |
 
 これらの確認手順は [CHECKS](CHECKS.md) に残しています。新機能や次の作品は別の依頼として範囲を決めます。Git変更操作・公開へ進む前に [作業合意](../.github/copilot-instructions.md#git操作ブランチ運用公開の合意) を確認し、過去のAgentの実行を許可の根拠にしないでください。
 
 ## Xで紹介する前の確認
 
-2026-10-04に読み取り検査を行いました。リポジトリはpublic、Secret scanningとpush保護は有効で、取得したSecret scanning警告は0件でした。[最新Security Scan](https://github.com/bell-wagtail/kikimaru_2d-game/actions/runs/37176411921) のgitleaksは成功し、その検査対象と最新配信対象のファイル差分はありません。ローカルの全Git参照から428個のテキストblobを既知のトークン形式・秘密鍵・認証URL・秘密の直接代入パターンで確認し、検出は0件でした。miseでの `npm audit` も全依存で既知脆弱性0件です。これらは確認時点・検査対象の結果で、すべての漏えいや脆弱性を保証するものではありません。
+2026-10-04に読み取り検査を行いました。リポジトリはpublic、Secret scanningとpush保護は有効で、取得したSecret scanning警告は0件でした。[直近のSecurity Scan](https://github.com/bell-wagtail/kikimaru_2d-game/actions/runs/37180544105) は成功しています。ローカルの全Git参照から428個のテキストblobを既知のトークン形式・秘密鍵・認証URL・秘密の直接代入パターンで確認し、検出は0件でした。miseでの `npm audit` も全依存で既知脆弱性0件です。これらは確認時点・検査対象の結果で、すべての漏えいや脆弱性を保証するものではありません。
 
 現行ゲームの実装と公開ページのDOMでは、個人情報の入力フォーム・独自の外部送信・解析タグは見当たりませんでした。Pagesの配信内容と、GitHub上で閲覧できる文書・制作記録・生成プロンプト・ソース・コミット履歴は別です。コミットにはGitHubのnoreply以外の作者／コミッターメールが2種類あり、文書にはローカルのプロジェクトパスがあります。現行の追跡文書にユーザーホームのパスは見当たりませんでした。Repoを紹介する場合は、これらも閲覧される前提で判断します。
 
 ユーザーはこの公開範囲を問題ないと判断しています。ライセンス未設定も意図的で、今回はMITライセンスを採用していません。これらを修正の残件として扱ったり、ライセンスを追加したりしないでください。別のプロジェクトでのMIT採用実績を、このプロジェクトの方針に読み替えません。
 
-Semgrepの設定指摘は新規パッケージの採用を遅らせるnpm設定についてのものです。設定の意味は [npm公式](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age)、公開Repoのライセンスと閲覧・forkの扱いは [GitHub公式](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository) を参照してください。検査のための依存導入・更新、CI設定変更、履歴の書き換え、公開操作、Xへの投稿は行っていません。
+Semgrepの設定指摘は新規パッケージの採用を遅らせるnpm設定についてのものです。設定の意味は [npm公式](https://docs.npmjs.com/cli/v11/using-npm/config/#min-release-age)、公開Repoのライセンスと閲覧・forkの扱いは [GitHub公式](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository) を参照してください。公開範囲の読み取り検査では、依存導入・更新、履歴の書き換え、公開操作、Xへの投稿は行っていません。
 
-同日のユーザー依頼で `.npmrc` に `min-release-age` を設定しました。設定値は同ファイルが正本です。導入済みnpmが待機期間を公開日の上限へ変換して適用することと、miseでの単体テスト89件・型チェック付きビルドの成功を確認しました。依存の追加・更新・再インストールやロックファイルの変更は行っていません。ゲーム実装への変更がないためWebGL／Canvasは再実行していません。GitHub上の変更反映とSecurity Scanの再確認は未実施です。
+同日のユーザー依頼で `.npmrc` に `min-release-age` を設定しました。設定値は同ファイルが正本です。導入済みnpmが待機期間を公開日の上限へ変換して適用することと、miseでの単体テスト89件・型チェック付きビルドの成功を確認しました。依存の追加・更新・再インストールやロックファイルの変更は行っていません。ゲーム実装への変更がないためWebGL／Canvasは再実行していません。変更はユーザーがGitHubへ反映し、上記のSecurity Scan成功を確認しました。
 
 ## 文書整理と次の開発への引き継ぎ
 
