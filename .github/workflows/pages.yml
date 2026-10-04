@@ -3,6 +3,8 @@ name: GitHub Pages
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -10,13 +12,26 @@ permissions:
 
 concurrency:
   group: pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'publish' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
+  security:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/security-scan.yml
+
   build:
-    if: github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch
+    if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    needs: security
     runs-on: ubuntu-24.04
     steps:
+      - name: Require successful security scan
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+        run: |
+          if [ "$SECURITY_RESULT" != success ]; then
+            echo "Security scan did not succeed: $SECURITY_RESULT"
+            exit 1
+          fi
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -25,6 +40,8 @@ jobs:
         uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
       - name: Install locked dependencies
         run: mise exec -- npm --cache .npm-cache ci --ignore-scripts
+      - name: Audit dependencies
+        run: mise exec -- npm --cache .npm-cache audit --audit-level=high
       - name: Unit tests
         run: mise exec -- npm --cache .npm-cache test
       - name: Type check and build for the project URL
@@ -37,7 +54,7 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-24.04
     permissions:

@@ -34,6 +34,7 @@ Test-Path -LiteralPath .\package-lock.json
 ```
 
 使用バージョンは [mise.toml](../mise.toml)・[package.json](../package.json)、解決済み依存は [package-lock.json](../package-lock.json) が正本です。
+新規公開パッケージの採用を遅らせる設定も [`.npmrc`](../.npmrc) にあります。日数や導入方針は同ファイルを参照してください。
 最後の出力が `True` であることを確認します。既存設定を使用するので、プロジェクトの再生成や最新版への更新は不要です。
 
 ## 3. mise管理のNode.jsを用意する
