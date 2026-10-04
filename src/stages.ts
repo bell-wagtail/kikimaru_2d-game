@@ -8,6 +8,7 @@ import { ITEM_TYPES } from "./items";
 import type { ItemDefinition, ItemKind } from "./items";
 import type { GroundHole } from "./ground";
 import type { StageEndpoint } from "./endpoints";
+import type { WallDefinition } from "./walls";
 import teaRiverMap from "./stage-maps/tea-river.txt?raw";
 import teaRiverTrailMap from "./stage-maps/tea-river-trail.txt?raw";
 
@@ -24,6 +25,7 @@ export interface StageDefinition {
   readonly holes?: readonly GroundHole[];
   readonly start?: StageEndpoint;
   readonly goal?: StageEndpoint;
+  readonly walls?: WallDefinition;
 }
 
 export const STAGE_MAP_GRID = {

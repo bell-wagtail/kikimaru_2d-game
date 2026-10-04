@@ -24,6 +24,8 @@ import { PlayResultState } from "../playResult";
 import { MilestoneOverlay } from "../MilestoneOverlay";
 import { preloadAudio, WalkAudio } from "../WalkAudio";
 import { AUDIO_CUES } from "../audioDefinition";
+import { StageWalls } from "../StageWalls";
+import { validateWalls } from "../walls";
 
 const partUrls = import.meta.glob<string>("../kikimaru-assets/assets/character/right/*.png", {
   eager: true, query: "?url", import: "default"
@@ -61,6 +63,7 @@ export class WalkScene extends Phaser.Scene {
   private feedback!: ItemFeedback;
   private speedLines!: SpeedLines;
   private ground!: StageGround;
+  private walls!: StageWalls;
   private previousPlayerX = WORLD.width / 2;
   private status = document.querySelector<HTMLElement>("#state")!;
   private scoreLabel = document.querySelector<HTMLElement>("#score")!;
@@ -119,6 +122,7 @@ export class WalkScene extends Phaser.Scene {
     }
     const items = stageItems(this.stageDefinition);
     validateItems(items);
+    validateWalls(this.stageDefinition.walls, this.stageDefinition.start, this.stageDefinition.goal, items);
     for (const kind of new Set(items.map(item => item.kind))) {
       const asset = itemAsset(kind);
       this.load.image(asset.key, asset.url);
@@ -133,6 +137,7 @@ export class WalkScene extends Phaser.Scene {
     this.scenery = new RepeatingScenery(this, this.stageDefinition);
     this.ground = new StageGround(this, this.stageDefinition.holes ?? []);
     this.obstacles = new FixedObstacles(this, this.stageDefinition.obstacles ?? []);
+    this.walls = new StageWalls(this, this.stageDefinition.walls);
     this.items = new StageItems(this, stageItems(this.stageDefinition));
     this.endpoints = new StageEndpoints(this, this.stageDefinition);
     this.cameras.main.setScroll(0, 0);
@@ -159,7 +164,6 @@ export class WalkScene extends Phaser.Scene {
     this.physics.add.existing(hitbox);
     this.body = hitbox.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true).setBounce(0);
-    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height, false, false, true, false);
     this.physics.add.collider(hitbox, this.obstacles.group);
     this.physics.add.collider(hitbox, this.ground.group, undefined, (_player, floor) => {
       const floorBody = (floor as Phaser.Types.Physics.Arcade.GameObjectWithBody).body;
@@ -236,6 +240,7 @@ export class WalkScene extends Phaser.Scene {
     this.items.reset();
     this.ground.reset();
     this.endpoints.reset();
+    this.walls.reset();
     const start = this.stageDefinition.start ? endpointPosition(this.stageDefinition.start) : { x: WORLD.width / 2, bottom: WORLD.ground };
     this.body.reset(start.x, start.bottom - PLAYER.height / 2);
     this.body.setVelocity(0);
@@ -285,6 +290,7 @@ export class WalkScene extends Phaser.Scene {
     this.items.rebase(shift);
     this.ground.rebase(shift);
     this.endpoints.rebase(shift);
+    this.walls.rebase(shift);
   }
 
   private updateScore(): void {
@@ -352,8 +358,9 @@ export class WalkScene extends Phaser.Scene {
     if (this.processContacts(expired)) return;
     const contacts = this.obstacles.contacts(this.body);
     const groundContacts = this.ground.contacts(this.body);
-    this.body.blocked.left ||= contacts.left || groundContacts.left;
-    this.body.blocked.right ||= contacts.right || groundContacts.right;
+    const wallContacts = this.walls.contacts(this.body);
+    this.body.blocked.left ||= contacts.left || groundContacts.left || wallContacts.left;
+    this.body.blocked.right ||= contacts.right || groundContacts.right || wallContacts.right;
     const movement = applyMovement(this.body, this.controls, this.movementState, dt, this.powerUps);
     if (movement.facing) this.facing = movement.facing;
     const airborne = movement.jumping || !(this.body.blocked.down || this.body.touching.down);

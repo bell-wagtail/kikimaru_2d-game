@@ -6,6 +6,8 @@ import { validateGroundHoles } from "./ground.ts";
 import type { GroundHole } from "./ground.ts";
 import { ENDPOINT_SYMBOLS, validateEndpoint } from "./endpoints.ts";
 import type { StageEndpoint } from "./endpoints.ts";
+import { WALL_SYMBOLS, validateWalls } from "./walls.ts";
+import type { WallDefinition } from "./walls.ts";
 
 export interface StageMapGrid {
   readonly cellWidth: number;
@@ -20,6 +22,7 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
   holes: GroundHole[];
   start?: StageEndpoint;
   goal?: StageEndpoint;
+  walls?: WallDefinition;
 } {
   if (![grid.cellWidth, grid.cellHeight, grid.originX, grid.groundY].every(Number.isFinite) ||
       grid.cellWidth <= 0 || grid.cellHeight <= 0) {
@@ -36,6 +39,8 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
   const holes: GroundHole[] = [];
   const endpoints: { start?: StageEndpoint; goal?: StageEndpoint } = {};
   const locations: Partial<Record<keyof typeof ENDPOINT_SYMBOLS, string>> = {};
+  const walls: { left?: number; right?: number } = {};
+  const wallLocations: Partial<Record<keyof typeof WALL_SYMBOLS, string>> = {};
   const floor = rows[groundRow];
   for (let column = 0; column < width;) {
     if (floor[column] === "=") { column++; continue; }
@@ -55,11 +60,19 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
       const kind = itemKindForSymbol(symbol);
       const endpoint = (Object.keys(ENDPOINT_SYMBOLS) as (keyof typeof ENDPOINT_SYMBOLS)[])
         .find(key => ENDPOINT_SYMBOLS[key] === symbol);
+      const wall = (Object.keys(WALL_SYMBOLS) as (keyof typeof WALL_SYMBOLS)[])
+        .find(key => WALL_SYMBOLS[key] === symbol);
       if (endpoint) {
         const location = `${row + 1}行${column + 1}列の${symbol}`;
         if (endpoints[endpoint]) throw new Error(`${location}は複数指定です（先の指定: ${locations[endpoint]}）`);
         endpoints[endpoint] = bounds;
         locations[endpoint] = location;
+      }
+      else if (wall) {
+        const location = `${row + 1}行${column + 1}列の${symbol}`;
+        if (walls[wall] !== undefined) throw new Error(`${location}は複数指定です（先の指定: ${wallLocations[wall]}）`);
+        walls[wall] = bounds.x + (wall === "left" ? bounds.width : 0);
+        wallLocations[wall] = location;
       }
       else if (symbol === "x") obstacles.push({ id: `rock-r${row}-c${column}`, kind: "rock", ...bounds });
       else if (kind) items.push({ id: `${kind}-r${row}-c${column}`, kind, ...bounds });
@@ -72,5 +85,7 @@ export function parseStageMap(text: string, grid: StageMapGrid): {
   for (const key of Object.keys(endpoints) as (keyof typeof ENDPOINT_SYMBOLS)[]) {
     validateEndpoint(endpoints[key]!, locations[key]!, grid.groundY, obstacles, holes);
   }
-  return { obstacles, items, holes, ...endpoints };
+  const wallDefinition = Object.keys(walls).length ? walls : undefined;
+  validateWalls(wallDefinition, endpoints.start, endpoints.goal, items, `左右の壁（${Object.values(wallLocations).join("、")}）`);
+  return { obstacles, items, holes, ...endpoints, ...(wallDefinition ? { walls: wallDefinition } : {}) };
 }

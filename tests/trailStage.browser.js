@@ -130,6 +130,8 @@ export async function verifyTrailStage({ scene, key, step, restart, pass, assert
   for (const sign of [-1, 1]) {
     const shift = sign * REBASE_DISTANCE;
     const shifted = { ...stage,
+      // This coordinate regression deliberately travels outside the trail; bounded travel is tested separately.
+      walls: undefined,
       start: { ...stage.start, x: stage.start.x + shift },
       goal: { ...stage.goal, x: stage.goal.x + shift },
       obstacles: stage.obstacles.map(rock => ({ ...rock, x: rock.x + shift })),
