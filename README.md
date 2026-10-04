@@ -8,7 +8,7 @@
 
 | 知りたいこと | 正本 |
 |---|---|
-| 現在の到達点・確認状況・次セッションの2段階の依頼文 | [STATUS](docs/STATUS.md) |
+| 現在の到達点・確認状況・残件 | [STATUS](docs/STATUS.md) |
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
 | GitHub Pagesで公開・更新する | [PUBLISH](docs/PUBLISH.md) |
@@ -16,6 +16,7 @@
 | 変更後に検証する | [CHECKS](docs/CHECKS.md) |
 | 素材の仕様・組み込み上の制約 | [素材README](src/kikimaru-assets/README.md) |
 | Agentの作業ルール | [共通指示](.github/copilot-instructions.md)（Codexの入口は [AGENTS.md](AGENTS.md)） |
+| 別のききまる開発へ引き継ぐ成功・失敗と文書ひな形 | [Accumulation](Accumulation/README.md) |
 
 ## 数値・設定の正本（SSoT）
 
@@ -73,5 +74,6 @@
 - `tests/`：入力・移動・地形・アイテム・演出の単体テストと、Phaser上の結合テスト。
 - `docs/`：上記の目的別文書。
 - `.github/`：Agent共通指示・CIなどの運用設定。
-- `git-setup/`・`docker/`：既存のGit・セキュリティ検査用の補助環境。
+- `git-setup/`・`docker/`：既存のGit・セキュリティ検査用の補助環境。[Git環境の手順](git-setup/README.md)を参照。
+- `Accumulation/`：別の開発へコピーできる文書セット。このゲームの現在の状態は `docs/STATUS.md` に保持。
 - `archive/`：旧デモ・過去資料。通常の開発対象・仕様の正本ではありません。履歴を調べる場合のみ [案内](archive/README.md) を参照。
