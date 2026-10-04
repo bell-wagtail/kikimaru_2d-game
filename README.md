@@ -12,7 +12,7 @@
 | 開発環境を準備する | [SETUP](docs/SETUP.md) |
 | デモを起動して遊ぶ | [RUN](docs/RUN.md) |
 | GitHub Pagesで公開・更新する | [PUBLISH](docs/PUBLISH.md) |
-| 文字マップで岩・穴・アイテム・スタート・ゴールの配置を編集する | [STAGES](docs/STAGES.md) |
+| 文字マップで岩・穴・アイテム・スタート・ゴール・左右の壁を編集する | [STAGES](docs/STAGES.md) |
 | 変更後に検証する | [CHECKS](docs/CHECKS.md) |
 | 素材の仕様・組み込み上の制約 | [素材README](src/kikimaru-assets/README.md) |
 | Agentの作業ルール | [共通指示](.github/copilot-instructions.md)（Codexの入口は [AGENTS.md](AGENTS.md)） |
@@ -36,6 +36,8 @@
 | 文字マップによる岩・穴・アイテムの配置 | [現行マップ](src/stage-maps/tea-river.txt)・[寄り道マップ](src/stage-maps/tea-river-trail.txt) |
 | 文字マップの記号・座標への変換 | [stageMap.ts](src/stageMap.ts) |
 | スタート・ゴールの記号・足元位置・安全な足場の検証 | [endpoints.ts](src/endpoints.ts) |
+| 左右壁の記号・座標・配置検証・停止中の接触判定 | [walls.ts](src/walls.ts) |
+| 左右壁の表示・物理境界・座標補正・リセット | [StageWalls.ts](src/StageWalls.ts) |
 | スタート・ゴールの表示と接触・座標補正・専用演出の設定 | [stageEndpoints.ts](src/stageEndpoints.ts) |
 | 開始・結果・再挑戦の画面 | [MilestoneOverlay.ts](src/MilestoneOverlay.ts) |
 | ゴール結果の一度だけの確定と記録 | [playResult.ts](src/playResult.ts) |
