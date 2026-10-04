@@ -1,6 +1,6 @@
 # GitHub Pagesで公開・更新する
 
-対象リポジトリは [bell-wagtail/kikimaru_2d-game](https://github.com/bell-wagtail/kikimaru_2d-game) です。公開先は [ききまるのおさんぽ](https://bell-wagtail.github.io/kikimaru_2d-game/) です。2026-10-03の初回配信と公開URLの表示を確認済みです。自動配信の初回成功は、変更を `main` へ反映した後にActionsの配信結果とSettings → Pagesで確認してください。
+対象リポジトリは [bell-wagtail/kikimaru_2d-game](https://github.com/bell-wagtail/kikimaru_2d-game) です。公開先は [ききまるのおさんぽ](https://bell-wagtail.github.io/kikimaru_2d-game/) です。2026-10-03の初回配信と公開URLの表示を確認済みです。2026-10-04にユーザーが `main` 反映後の自動配信を確認しました。
 
 配信処理・対象ブランチ・権限・公開パスの正本は [pages.yml](../.github/workflows/pages.yml) です。標準のプロジェクトURLを対象にし、独自ドメインやユーザーサイトのルートへの配信は今回の対象外です。
 
